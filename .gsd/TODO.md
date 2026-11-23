@@ -16,9 +16,9 @@
 
 ## Items
 
-- [ ] Deduplicate `peerjs.min.js` vs inlined copy in `index.html` `medium` — 2026-11-23
-- [ ] Add unit test runner for budgeting and EMI calculations `high` — 2026-11-23
-- [ ] Evaluate modularizing `index.html` into ES modules `medium` — 2026-11-23
+- [x] Deduplicate `peerjs.min.js` vs inlined copy in `index.html` `medium` — 2026-11-23 ✓ 2026-11-23
+- [x] Add unit test runner for budgeting and EMI calculations `high` — 2026-11-23 ✓ 2026-11-23
+- [ ] Complete modularizing `index.html` into ES modules (Phase 4 completion) `medium` — 2026-11-23
 
 ---
 
