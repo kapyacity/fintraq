@@ -55,4 +55,18 @@ Enables encrypted direct data transfer directly between user devices.
 
 ---
 
+## Phase 2 Decisions: Dynamic Inflow & Dedicated Funds
+
+**Date:** 2026-11-23
+
+### Scope
+- Cumulative split inflow logging without forcing a fixed monthly salary.
+- Dedicated Funds cards (Emergency, Trips, Sinking Funds) with targets, current balance, deposit/withdraw actions, and visual progress.
+
+### Approach
+- **Dynamic Inflow**: If no static job base is set, the month starts at ₹0 total inflow. Each logged inflow increments the monthly cumulative income and instantly recalculates the 50/30/20 category allocations without blocking prompt cards.
+- **Dedicated Funds**: Model in `state.funds = [{ id, name, target, balance, icon, color, createdAt, history: [...] }]`. Integrated with local storage, P2P sync, and JSON backup.
+
+---
+
 *Last updated: 2026-11-23*

@@ -7,11 +7,13 @@ FinTraQ is a client-side, zero-backend, offline-first Progressive Web Applicatio
 
 ## Goals
 1. Provide an offline-first, mobile-optimised budgeting interface with 50/30/20 allocation rules and custom ratios.
-2. Automate recurring loan and EMI schedule management, logging monthly payments directly into the Needs allocation.
-3. Support multi-stream income tracking with auto-budget recalculations.
-4. Enable seamless private multi-device and cross-tab data synchronization via WebRTC (PeerJS) and BroadcastChannel with Last-Write-Wins (LWW) resolution.
-5. Provide data portability via JSON backup/restore and permanent device persistence via the StorageManager API.
-6. Refactor the monolithic `index.html` structure into maintainable, tested modular components while maintaining zero server overhead.
+2. Support dynamic cumulative inflow logging: allow users to log split payments/earnings across the month without requiring a fixed base salary, dynamically expanding category budgets in real time.
+3. Provide dedicated Target & Emergency Funds (sinking funds, emergency reserves, vacation/trip pots) with customizable goal targets, visual progress tracking, and deposit/withdrawal logging.
+4. Automate recurring loan and EMI schedule management, logging monthly payments directly into the Needs allocation.
+5. Support multi-stream income tracking with auto-budget recalculations.
+6. Enable seamless private multi-device and cross-tab data synchronization via WebRTC (PeerJS) and BroadcastChannel with Last-Write-Wins (LWW) resolution.
+7. Provide data portability via JSON backup/restore and permanent device persistence via the StorageManager API.
+8. Refactor the monolithic `index.html` structure into maintainable, tested modular components while maintaining zero server overhead.
 
 ## Non-Goals (Out of Scope)
 - Centralized user database / cloud authentication backend (FinTraQ is strictly private, zero-backend).

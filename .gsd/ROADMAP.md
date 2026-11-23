@@ -10,6 +10,8 @@
 - [x] Offline PWA capability with Service Worker caching
 - [x] Local JSON backup/restore and multi-device P2P WebRTC sync
 - [x] Automated test suite validating budgeting math and loan amortization
+- [ ] Cumulative inflow logging without mandatory fixed salary prompt
+- [ ] Dedicated Emergency and Goal Funds (Trips, Emergency) with deposit/withdraw actions
 - [ ] Codebase cleanup removing redundant library duplicates
 
 ## Phases
@@ -19,17 +21,17 @@
 **Objective**: Build an automated test suite verifying core business logic (50/30/20 splits, rounding correction, EMI auto-logging, rollover, and sync LWW merge) without external runtime overhead.
 **Requirements**: REQ-09
 
-### Phase 2: Codebase Hygiene & Bundle Optimization
+### Phase 2: Dynamic Inflows & Dedicated Goal/Emergency Funds
+**Status**: ⬜ Not Started
+**Objective**: Implement cumulative split inflow logging (real-time 50/30/20 budget expansion without fixed salary requirement) and dedicated Target Funds (Emergency, Trips, Sinking Funds) with visual progress and deposit/withdraw actions.
+**Requirements**: REQ-12, REQ-13
+
+### Phase 3: Codebase Hygiene & Bundle Optimization
 **Status**: ⬜ Not Started
 **Objective**: Eliminate redundant files (e.g. standalone `peerjs.min.js` vs inlined copy), streamline Service Worker precache manifest, and establish clear code separation seams.
 **Requirements**: REQ-11
 
-### Phase 3: Modular Architecture Refactoring
+### Phase 4: Modular Architecture Refactoring
 **Status**: ⬜ Not Started
 **Objective**: Decouple the 1,950-line `index.html` into structured CSS, HTML views, and ES modules (data-model, sync, ui, charts, storage) with zero bundle regression.
 **Requirements**: REQ-10
-
-### Phase 4: Feature Enhancements & Polish
-**Status**: ⬜ Not Started
-**Objective**: Advanced insights, recurring non-loan subscription tracking, and enhanced WebRTC connection diagnostics.
-**Requirements**: REQ-01, REQ-07

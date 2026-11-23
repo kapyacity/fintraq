@@ -7,22 +7,23 @@ updated: 2026-11-23T12:35:00+05:30
 ## Current Position
 
 **Milestone:** v1.0 Baseline & Hardening
-**Phase:** 1 - Test & Baseline Verification (Completed & Verified)
-**Status:** complete
-**Plan:** None (Phase 1 complete)
+**Phase:** 2 - Dynamic Inflows & Dedicated Goal/Emergency Funds
+**Status:** ready-to-plan
+**Plan:** None (Run /plan 2)
 
 ## Last Action
 
-Phase 1 executed and verified:
-- Wave 1 (01-PLAN.md): Test harness setup & 50/30/20 math (`295b4c2`, `a90faec`)
-- Wave 2 (02-PLAN.md): Loan EMI auto-logging & monthly rollover (`64f0428`, `0029918`)
-- Wave 3 (03-PLAN.md): P2P LWW sync reconciliation & test runner script (`23da964`, `cf8a5b8`)
-- Verification: 13/13 must-haves verified by gsd-verifier (status: pass)
+Requirements and Roadmap updated for Phase 2:
+- SPEC.md updated with Goals 2 & 3 (dynamic split inflows, target/emergency funds)
+- REQUIREMENTS.md updated with REQ-12 and REQ-13
+- ROADMAP.md reordered: Phase 2 is now Dynamic Inflows & Dedicated Goal/Emergency Funds
+- DECISIONS.md recorded Phase 2 architecture decisions
 
 ## Next Steps
 
-1. `/plan 2` — Create execution plans for Phase 2: Codebase Hygiene & Bundle Optimization
-2. `/execute 2` — Execute Phase 2 plans
+1. `/plan 2` — Generate execution plans for Phase 2
+2. `/execute 2` — Implement Phase 2 plans with atomic commits
+3. `/verify 2` — Run empirical verification suite
 
 ## Active Decisions
 
