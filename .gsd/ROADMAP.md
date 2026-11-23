@@ -9,13 +9,13 @@
 - [x] Loan/EMI schedule tracking with automatic payment logging into Needs
 - [x] Offline PWA capability with Service Worker caching
 - [x] Local JSON backup/restore and multi-device P2P WebRTC sync
-- [ ] Automated test suite validating budgeting math and loan amortization
+- [x] Automated test suite validating budgeting math and loan amortization
 - [ ] Codebase cleanup removing redundant library duplicates
 
 ## Phases
 
 ### Phase 1: Test & Baseline Verification
-**Status**: ⬜ Not Started
+**Status**: 🟢 Completed
 **Objective**: Build an automated test suite verifying core business logic (50/30/20 splits, rounding correction, EMI auto-logging, rollover, and sync LWW merge) without external runtime overhead.
 **Requirements**: REQ-09
 

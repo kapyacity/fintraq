@@ -37,8 +37,8 @@
     {
       "file": "tests/loans.test.js",
       "feature": "Loans & EMI Auto-Logging",
-      "tests": 11,
-      "passed": 11,
+      "tests": 12,
+      "passed": 12,
       "failed": 0,
       "coverageAreas": [
         "Loan creation with default and custom remaining amounts",
@@ -54,8 +54,8 @@
     {
       "file": "tests/rollover-income.test.js",
       "feature": "Multi-Stream Inflows & Monthly Rollover Engine",
-      "tests": 16,
-      "passed": 16,
+      "tests": 15,
+      "passed": 15,
       "failed": 0,
       "coverageAreas": [
         "Multi-stream monthly income calculation (salary + inflows)",
