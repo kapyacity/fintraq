@@ -39,4 +39,20 @@ Enables encrypted direct data transfer directly between user devices.
 
 ---
 
+## Phase 1 Decisions
+
+**Date:** 2026-11-23
+
+### Scope
+- Full baseline coverage: 50/30/20 math, loan/EMI auto-logging, monthly rollover, and P2P LWW sync merge.
+
+### Approach
+- Chose: Built-in Node test runner (`node:test` + `node:assert`) with zero npm dependencies.
+- Reason: Zero overhead, instantaneous execution via `node --test`, native in modern Node.js environments without requiring package manager bloat.
+
+### Constraints
+- Pure logic functions tested without requiring DOM or browser globals (or with minimal in-memory shims).
+
+---
+
 *Last updated: 2026-11-23*
