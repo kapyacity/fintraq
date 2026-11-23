@@ -172,11 +172,11 @@ export function createTestContext(initialStateOverrides = null) {
         style: {},
         classList: {
           contains: () => false,
-          add: () => {},
-          remove: () => {},
-          toggle: () => {}
+          add: () => { },
+          remove: () => { },
+          toggle: () => { }
         },
-        focus: () => {}
+        focus: () => { }
       });
     }
     return elements.get(id);
@@ -296,15 +296,15 @@ export function createTestContext(initialStateOverrides = null) {
     escapeHtml: (str) => String(str),
 
     // Stubs for non-core UI renderers called by setters/nav
-    renderCatBudgets: () => {},
-    renderMonthNav: () => {},
-    renderExpenses: () => {},
-    renderCharts: () => {},
-    renderLoans: () => {},
-    renderIncomes: () => {},
-    renderFunds: () => {},
-    renderFundHistory: () => {},
-    renderGSheetUI: () => {}
+    renderCatBudgets: () => { },
+    renderMonthNav: () => { },
+    renderExpenses: () => { },
+    renderCharts: () => { },
+    renderLoans: () => { },
+    renderIncomes: () => { },
+    renderFunds: () => { },
+    renderFundHistory: () => { },
+    renderGSheetUI: () => { }
   };
 
   vmContext = vm.createContext(sandbox);
