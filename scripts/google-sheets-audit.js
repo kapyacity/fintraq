@@ -34,6 +34,25 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify({ status: 'ok', count: (data.expenses ? data.expenses.length : 0) + (data.inflows ? data.inflows.length : 0) })).setMimeType(ContentService.MimeType.JSON);
     }
     
+    if (data.action === 'weekly_backup') {
+      handleBatchSync(ss, data);
+      var backupSheet = getOrCreateSheet(ss, "Weekly Backups", [
+        "Timestamp", "Date (IST)", "Expenses Count", "Inflows Count", "Funds Count", "Loans Count", "Status"
+      ]);
+      var now = new Date();
+      var dateStr = Utilities.formatDate(now, "Asia/Kolkata", "yyyy-MM-dd HH:mm:ss");
+      backupSheet.appendRow([
+        now.getTime(),
+        dateStr,
+        data.expenses ? data.expenses.length : 0,
+        data.inflows ? data.inflows.length : 0,
+        data.funds ? data.funds.length : 0,
+        data.loans ? data.loans.length : 0,
+        "Snapshot Complete ✓"
+      ]);
+      return ContentService.createTextOutput(JSON.stringify({ status: 'ok', message: 'Weekly backup logged' })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
     // Single transaction log
     logTransaction(ss, data);
     return ContentService.createTextOutput(JSON.stringify({ status: 'ok' })).setMimeType(ContentService.MimeType.JSON);

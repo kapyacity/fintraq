@@ -34,14 +34,14 @@ if (b2StartIndex === -1 || b2EndIndex === -1) {
 
 const block2Code = htmlContent.slice(b2StartIndex, b2EndIndex);
 
-// Extract Block 3: Google Sheets Audit Sync Engine
-const b3StartMarker = '/* ---------------- Google Sheets Audit Sync Engine ---------------- */';
+// Extract Block 3: Security & App Lock Engine and Google Sheets Audit Sync Engine
+const b3StartMarker = '/* ---------------- Security & App Lock Engine ---------------- */';
 const b3EndMarker = '/* ---------------- P2P WebRTC Auto-Sync Engine (PeerJS + BroadcastChannel) ---------------- */';
 const b3StartIndex = htmlContent.indexOf(b3StartMarker);
 const b3EndIndex = htmlContent.indexOf(b3EndMarker);
 
 if (b3StartIndex === -1 || b3EndIndex === -1) {
-  throw new Error('Could not locate Google Sheets code block in index.html');
+  throw new Error('Could not locate Security and Google Sheets code block in index.html');
 }
 
 const block3Code = htmlContent.slice(b3StartIndex, b3EndIndex);
@@ -124,7 +124,18 @@ globalThis.__fintraq = {
   sendToGoogleSheet,
   flushPendingSheetSync,
   testGSheetConnection,
-  syncAllToGoogleSheet
+  syncAllToGoogleSheet,
+  checkWeeklyGSheetBackup,
+  runWeeklyGSheetBackup,
+  checkAppLock,
+  unlockApp,
+  pressPin,
+  clearPin,
+  backspacePin,
+  lockAppNow,
+  savePinConfig,
+  togglePinEnabled,
+  renderSecurityUI
 };
 `;
 
@@ -179,6 +190,22 @@ export function createTestContext(initialStateOverrides = null) {
     }
     return elements.get(id);
   }
+
+  const sessionStorageMap = {};
+  const mockSessionStorage = {
+    getItem: (key) => (key in sessionStorageMap ? sessionStorageMap[key] : null),
+    setItem: (key, value) => {
+      sessionStorageMap[key] = String(value);
+    },
+    removeItem: (key) => {
+      delete sessionStorageMap[key];
+    },
+    clear: () => {
+      for (const k of Object.keys(sessionStorageMap)) {
+        delete sessionStorageMap[k];
+      }
+    }
+  };
 
   const mockLocalStorage = {
     getItem: (key) => (key in storage ? storage[key] : null),
@@ -243,6 +270,7 @@ export function createTestContext(initialStateOverrides = null) {
 
     // Browser mocks
     localStorage: mockLocalStorage,
+    sessionStorage: mockSessionStorage,
     document: mockDocument,
     window: mockWindow,
     navigator: mockNavigator,
@@ -285,7 +313,8 @@ export function createTestContext(initialStateOverrides = null) {
     renderIncomes: () => {},
     renderFunds: () => {},
     renderFundHistory: () => {},
-    renderGSheetUI: () => {}
+    renderGSheetUI: () => {},
+    renderSecurityUI: () => {}
   };
 
   vmContext = vm.createContext(sandbox);
@@ -303,6 +332,7 @@ export function createTestContext(initialStateOverrides = null) {
     toasts,
     fetchCalls,
     navigator: mockNavigator,
+    sessionStorage: mockSessionStorage,
     get renders() {
       return renders;
     },
