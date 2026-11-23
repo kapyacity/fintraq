@@ -435,4 +435,111 @@ describe('FinTraQ Dedicated Target & Emergency Funds Engine (REQ-13)', () => {
       assert.equal(peerA.state.funds[0].history.length, 2);
     });
   });
+
+  describe('Funds UI Modals & Interaction Handlers', () => {
+    it('openFundModal populates fields for create and triggers openModal', () => {
+      const ctx = createTestContext();
+      ctx.openFundModal();
+      assert.ok(ctx.openModalCalls.includes('fundModal'));
+      assert.equal(ctx.document.getElementById('fundEditId').value, '');
+      assert.equal(ctx.document.getElementById('fundModalTitle').textContent, 'Add Target / Emergency Fund');
+      assert.equal(ctx.document.getElementById('fundName').value, '');
+      assert.equal(ctx.document.getElementById('fundTarget').value, '');
+    });
+
+    it('openFundModal populates existing fund fields for editing', () => {
+      const ctx = createTestContext();
+      const fund = ctx.saveFund({
+        name: 'Japan Trip',
+        target: 250000,
+        category: 'trip',
+        color: '#3b82f6',
+        icon: 'plane'
+      });
+      ctx.resetSpies();
+
+      ctx.openFundModal(fund.id);
+      assert.ok(ctx.openModalCalls.includes('fundModal'));
+      assert.equal(ctx.document.getElementById('fundEditId').value, fund.id);
+      assert.equal(ctx.document.getElementById('fundModalTitle').textContent, 'Edit Fund');
+      assert.equal(ctx.document.getElementById('fundName').value, 'Japan Trip');
+      assert.equal(ctx.document.getElementById('fundTarget').value, 250000);
+      assert.equal(ctx.document.getElementById('fundIconSelect').value, 'plane');
+    });
+
+    it('saveFund() without arguments reads inputs from DOM and creates fund', () => {
+      const ctx = createTestContext();
+      ctx.setElement('fundEditId', { value: '' });
+      ctx.setElement('fundName', { value: 'New Laptop Fund' });
+      ctx.setElement('fundTarget', { value: '120000' });
+      ctx.setElement('fundInitBal', { value: '10000' });
+      ctx.setElement('fundIconSelect', { value: 'laptop' });
+      ctx.setElement('fundColorSelect', { value: '#8b5cf6' });
+
+      const fund = ctx.saveFund();
+      assert.ok(fund);
+      assert.equal(fund.name, 'New Laptop Fund');
+      assert.equal(fund.target, 120000);
+      assert.equal(fund.balance, 10000);
+      assert.equal(fund.category, 'gadget');
+      assert.equal(fund.icon, 'laptop');
+      assert.ok(ctx.closeModalCalls.includes('fundModal'));
+    });
+
+    it('openDepositModal and handleDepositSubmit deposit amount and close modal', () => {
+      const ctx = createTestContext();
+      const fund = ctx.saveFund({ name: 'Emergency Fund', target: 50000 });
+      ctx.resetSpies();
+
+      ctx.openDepositModal(fund.id);
+      assert.ok(ctx.openModalCalls.includes('fundDepositModal'));
+      assert.equal(ctx.document.getElementById('depositFundId').value, fund.id);
+      assert.ok(ctx.document.getElementById('depositFundTitle').textContent.includes('Emergency Fund'));
+
+      // Submit deposit via modal handler
+      ctx.setElement('depositAmount', { value: '5000' });
+      ctx.setElement('depositNote', { value: 'Freelance cut' });
+      ctx.handleDepositSubmit();
+
+      assert.equal(fund.balance, 5000);
+      assert.ok(ctx.closeModalCalls.includes('fundDepositModal'));
+      assert.ok(ctx.toasts.some(t => t.includes('Deposited')));
+    });
+
+    it('openWithdrawModal and handleWithdrawSubmit withdraw amount and close modal', () => {
+      const ctx = createTestContext();
+      const fund = ctx.saveFund({ name: 'Emergency Fund', target: 50000, initialBalance: 20000 });
+      ctx.resetSpies();
+
+      ctx.openWithdrawModal(fund.id);
+      assert.ok(ctx.openModalCalls.includes('fundWithdrawModal'));
+      assert.equal(ctx.document.getElementById('withdrawFundId').value, fund.id);
+      assert.ok(ctx.document.getElementById('withdrawFundBalance').textContent.includes('20,000'));
+
+      // Submit withdrawal via modal handler
+      ctx.setElement('withdrawAmount', { value: '4000' });
+      ctx.setElement('withdrawNote', { value: 'Car battery repair' });
+      ctx.handleWithdrawSubmit();
+
+      assert.equal(fund.balance, 16000);
+      assert.ok(ctx.closeModalCalls.includes('fundWithdrawModal'));
+      assert.ok(ctx.toasts.some(t => t.includes('Withdrew')));
+    });
+
+    it('openFundHistoryModal displays deposit and withdrawal entries in innerHTML', () => {
+      const ctx = createTestContext();
+      const fund = ctx.saveFund({ name: 'Travel Fund', target: 80000 });
+      ctx.depositFund(fund.id, 15000, 'Salary savings');
+      ctx.withdrawFund(fund.id, 3000, 'Passport renewal');
+      ctx.resetSpies();
+
+      ctx.openFundHistoryModal(fund.id);
+      assert.ok(ctx.openModalCalls.includes('fundHistoryModal'));
+      const listHtml = ctx.document.getElementById('fundHistoryList').innerHTML;
+      assert.ok(listHtml.includes('Salary savings'));
+      assert.ok(listHtml.includes('Passport renewal'));
+      assert.ok(listHtml.includes('+ Deposit'));
+      assert.ok(listHtml.includes('- Withdraw'));
+    });
+  });
 });

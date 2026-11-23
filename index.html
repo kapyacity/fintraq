@@ -240,6 +240,38 @@ button:active{transform:scale(.96)}
 .loan-actions{display:flex;align-items:center;gap:8px}
 .loan-actions button{padding:8px 13px;font-size:13px;border-radius:11px}
 
+/* Dedicated Target & Emergency Funds Styles */
+.fund-item{padding:14px 0;border-bottom:1px solid var(--hair);animation:fadeUp .35s var(--ease) both}
+.fund-item:first-child{padding-top:4px}
+.fund-item:last-child{border-bottom:none;padding-bottom:2px}
+.fund-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
+.fund-head-left{display:flex;align-items:center;gap:10px;min-width:0}
+.fund-ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fund-ic svg{width:20px;height:20px}
+.fund-title{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.fund-meta{font-size:12.5px;color:var(--muted);margin-top:2px}
+.fund-badge{font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:99px;background:var(--bg2);color:var(--ink2);white-space:nowrap;flex-shrink:0}
+.fund-badge.complete{background:var(--savings-bg);color:var(--savings)}
+.fund-badge.ontrack{background:rgba(59,130,246,.12);color:#3b82f6}
+.fund-bar{margin:9px 0 11px}
+.fund-bar i{transition:width .4s var(--ease)}
+.fund-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fund-actions button{padding:8px 13px;font-size:13px;border-radius:11px;min-height:38px}
+.fund-actions .del{min-width:38px;min-height:38px;padding:0;display:flex;align-items:center;justify-content:center}
+.fund-presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.fund-preset-btn{background:var(--bg2);color:var(--ink);border:1px dashed var(--hair);padding:8px 12px;border-radius:12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:all .15s var(--ease)}
+.fund-preset-btn:active{transform:scale(.97)}
+.fund-history-list{max-height:300px;overflow-y:auto;margin:12px 0;padding-right:4px}
+.fund-history-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--hair)}
+.fund-history-row:last-child{border-bottom:none}
+.fund-history-type{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;text-transform:uppercase;margin-right:6px}
+.fund-history-type.deposit{background:var(--savings-bg);color:var(--savings)}
+.fund-history-type.withdraw{background:var(--danger-bg);color:var(--danger)}
+.fund-history-amt{font-size:15px;font-weight:700}
+.fund-history-amt.deposit{color:var(--savings)}
+.fund-history-amt.withdraw{color:var(--danger)}
+.fund-history-date{font-size:12px;color:var(--muted);margin-top:2px}
+
 .inc-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--hair);animation:fadeUp .35s var(--ease) both}
 .inc-item:last-child{border-bottom:none}
 .inc-ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--savings-bg);color:var(--savings);flex-shrink:0}
@@ -344,6 +376,16 @@ button:active{transform:scale(.96)}
       <div id="loanList"></div>
     </div>
 
+    <!-- TARGET & EMERGENCY FUNDS -->
+    <div class="card" id="fundsCard">
+      <h2>Target &amp; Emergency Funds <span class="r" onclick="openFundModal()">+ New Fund</span></h2>
+      <div class="between mb12" id="fundsSummaryRow" style="display:none">
+        <span class="hint" style="margin:0" id="fundsSummaryHint">Dedicated Savings</span>
+        <span class="fund-badge complete" id="fundsTotalSavedBadge">Total Saved: ₹0</span>
+      </div>
+      <div id="fundList"></div>
+    </div>
+
     <div class="card" id="budgetCard">
       <h2>Remaining · This Month</h2>
       <div id="catBudgets"></div>
@@ -401,6 +443,10 @@ button:active{transform:scale(.96)}
       <div class="hint" id="monthChartHint"></div>
     </div>
     <div class="card"><h2>Top Subcategories</h2><div id="topSubs"></div></div>
+    <div class="card" id="insightsFundsCard">
+      <h2>Goal &amp; Emergency Funds Progress</h2>
+      <div id="insightsFundsBody"></div>
+    </div>
   </div>
 
   <!-- ============ SETTINGS ============ -->
@@ -549,6 +595,91 @@ button:active{transform:scale(.96)}
   <input id="salaryEdit" type="number" inputmode="numeric" placeholder="Monthly take-home" class="mb12">
   <div class="hint mb16" style="margin-top:0">Changing salary re-splits using your current ratio and overwrites custom amounts.</div>
   <div class="row"><button class="btn-ghost grow" onclick="closeModal('salaryModal')">Cancel</button><button class="btn-primary grow" onclick="applySalaryEdit()">Save</button></div>
+</div></div>
+
+<!-- FUND MODAL -->
+<div class="modal-bg" id="fundModal"><div class="modal">
+  <div class="grabber"></div><h3 id="fundModalTitle">Add Target / Emergency Fund</h3>
+  <input type="hidden" id="fundEditId">
+  <label>Fund Name</label>
+  <input id="fundName" placeholder="e.g. Emergency Fund, Goa Trip, MacBook Pro" class="mb12">
+  <div class="row mb12">
+    <div class="grow">
+      <label>Target Amount (₹)</label>
+      <input id="fundTarget" type="number" inputmode="numeric" placeholder="e.g. 100000">
+    </div>
+    <div class="grow" id="fundInitBalGroup">
+      <label>Initial Balance (₹)</label>
+      <input id="fundInitBal" type="number" inputmode="numeric" placeholder="0">
+    </div>
+  </div>
+  <div class="row mb16">
+    <div class="grow">
+      <label>Category / Icon</label>
+      <select id="fundIconSelect" class="mb12" onchange="onFundIconChange()">
+        <option value="shield">🛡️ Emergency Fund</option>
+        <option value="plane">✈️ Trip / Vacation</option>
+        <option value="laptop">💻 Tech / Gadget</option>
+        <option value="piggy">🐷 Savings Goal</option>
+      </select>
+    </div>
+    <div class="grow">
+      <label>Theme Color</label>
+      <select id="fundColorSelect" class="mb12">
+        <option value="#10b981">Emerald Green</option>
+        <option value="#3b82f6">Ocean Blue</option>
+        <option value="#8b5cf6">Purple</option>
+        <option value="#f59e0b">Amber Gold</option>
+        <option value="#ef4444">Rose Red</option>
+      </select>
+    </div>
+  </div>
+  <div class="hint mb16" style="margin-top:0">Dedicated funds keep your long-term savings segregated from monthly spending budgets.</div>
+  <div class="row">
+    <button class="btn-ghost grow" onclick="closeModal('fundModal')">Cancel</button>
+    <button class="btn-primary grow" onclick="saveFund()">Save Fund</button>
+  </div>
+</div></div>
+
+<!-- FUND DEPOSIT MODAL -->
+<div class="modal-bg" id="fundDepositModal"><div class="modal">
+  <div class="grabber"></div><h3>Deposit into Fund</h3>
+  <input type="hidden" id="depositFundId">
+  <div class="hint mb12" id="depositFundTitle" style="font-size:15px;font-weight:700;color:var(--ink)"></div>
+  <label>Deposit Amount (₹)</label>
+  <input id="depositAmount" type="number" inputmode="numeric" placeholder="e.g. 5000" class="mb12">
+  <label>Note / Source (optional)</label>
+  <input id="depositNote" placeholder="e.g. Monthly transfer, Bonus allocation" class="mb16">
+  <div class="row">
+    <button class="btn-ghost grow" onclick="closeModal('fundDepositModal')">Cancel</button>
+    <button class="btn-primary grow" onclick="handleDepositSubmit()">Deposit</button>
+  </div>
+</div></div>
+
+<!-- FUND WITHDRAW MODAL -->
+<div class="modal-bg" id="fundWithdrawModal"><div class="modal">
+  <div class="grabber"></div><h3>Withdraw from Fund</h3>
+  <input type="hidden" id="withdrawFundId">
+  <div class="hint mb12" id="withdrawFundTitle" style="font-size:15px;font-weight:700;color:var(--ink)"></div>
+  <div class="hint mb12" id="withdrawFundBalance" style="color:var(--muted)"></div>
+  <label>Withdrawal Amount (₹)</label>
+  <input id="withdrawAmount" type="number" inputmode="numeric" placeholder="e.g. 2000" class="mb12">
+  <label>Reason / Note (optional)</label>
+  <input id="withdrawNote" placeholder="e.g. Car repair, Flight ticket" class="mb16">
+  <div class="row">
+    <button class="btn-ghost grow" onclick="closeModal('fundWithdrawModal')">Cancel</button>
+    <button class="btn-primary grow" onclick="handleWithdrawSubmit()">Withdraw</button>
+  </div>
+</div></div>
+
+<!-- FUND HISTORY MODAL -->
+<div class="modal-bg" id="fundHistoryModal"><div class="modal">
+  <div class="grabber"></div><h3 id="fundHistoryTitle">Fund Transaction History</h3>
+  <div class="hint mb12" id="fundHistorySubtitle" style="color:var(--muted)"></div>
+  <div class="fund-history-list" id="fundHistoryList"></div>
+  <div class="row" style="margin-top:12px">
+    <button class="btn-ghost grow" onclick="closeModal('fundHistoryModal')">Close</button>
+  </div>
 </div></div>
 
 <div class="toast" id="toast"></div>
@@ -962,7 +1093,157 @@ function delLoan(loanId) {
 }
 
 /* ---------------- Dedicated Target & Emergency Funds ---------------- */
+function openFundModal(editId) {
+  const editIdEl = document.getElementById('fundEditId');
+  if (!editIdEl) return;
+  editIdEl.value = editId || '';
+  const titleEl = document.getElementById('fundModalTitle');
+  const nameEl = document.getElementById('fundName');
+  const targetEl = document.getElementById('fundTarget');
+  const initBalGroup = document.getElementById('fundInitBalGroup');
+  const initBalEl = document.getElementById('fundInitBal');
+  const iconEl = document.getElementById('fundIconSelect');
+  const colorEl = document.getElementById('fundColorSelect');
+
+  if (editId) {
+    const fund = (state.funds || []).find(f => f.id === editId);
+    if (!fund) return;
+    if (titleEl) titleEl.textContent = 'Edit Fund';
+    if (nameEl) nameEl.value = fund.name || '';
+    if (targetEl) targetEl.value = fund.target || '';
+    if (initBalGroup && initBalGroup.style) initBalGroup.style.display = 'none';
+    if (iconEl) iconEl.value = fund.icon || 'shield';
+    if (colorEl) colorEl.value = fund.color || '#10b981';
+  } else {
+    if (titleEl) titleEl.textContent = 'Add Target / Emergency Fund';
+    if (nameEl) nameEl.value = '';
+    if (targetEl) targetEl.value = '';
+    if (initBalGroup && initBalGroup.style) initBalGroup.style.display = 'block';
+    if (initBalEl) initBalEl.value = '';
+    if (iconEl) iconEl.value = 'shield';
+    if (colorEl) colorEl.value = '#10b981';
+  }
+  openModal('fundModal');
+}
+
+function onFundIconChange() {
+  const iconEl = document.getElementById('fundIconSelect');
+  const colorEl = document.getElementById('fundColorSelect');
+  if (!iconEl || !colorEl) return;
+  const val = iconEl.value;
+  if (val === 'shield') colorEl.value = '#10b981';
+  else if (val === 'plane') colorEl.value = '#3b82f6';
+  else if (val === 'laptop') colorEl.value = '#8b5cf6';
+  else if (val === 'piggy') colorEl.value = '#f59e0b';
+}
+
+function openDepositModal(fundId) {
+  const fund = (state.funds || []).find(f => f.id === fundId);
+  if (!fund) return;
+  const idEl = document.getElementById('depositFundId');
+  const titleEl = document.getElementById('depositFundTitle');
+  const amtEl = document.getElementById('depositAmount');
+  const noteEl = document.getElementById('depositNote');
+  if (idEl) idEl.value = fundId;
+  if (titleEl) titleEl.textContent = fund.name + ' · Balance: ' + fmt(fund.balance);
+  if (amtEl) amtEl.value = '';
+  if (noteEl) noteEl.value = '';
+  openModal('fundDepositModal');
+}
+
+function handleDepositSubmit() {
+  const fundId = document.getElementById('depositFundId')?.value;
+  const amount = document.getElementById('depositAmount')?.value;
+  const note = document.getElementById('depositNote')?.value;
+  const ok = depositFund(fundId, amount, note);
+  if (ok && typeof closeModal === 'function') {
+    closeModal('fundDepositModal');
+  }
+}
+
+function openWithdrawModal(fundId) {
+  const fund = (state.funds || []).find(f => f.id === fundId);
+  if (!fund) return;
+  const idEl = document.getElementById('withdrawFundId');
+  const titleEl = document.getElementById('withdrawFundTitle');
+  const balEl = document.getElementById('withdrawFundBalance');
+  const amtEl = document.getElementById('withdrawAmount');
+  const noteEl = document.getElementById('withdrawNote');
+  if (idEl) idEl.value = fundId;
+  if (titleEl) titleEl.textContent = fund.name;
+  if (balEl) balEl.textContent = 'Available to withdraw: ' + fmt(fund.balance);
+  if (amtEl) amtEl.value = '';
+  if (noteEl) noteEl.value = '';
+  openModal('fundWithdrawModal');
+}
+
+function handleWithdrawSubmit() {
+  const fundId = document.getElementById('withdrawFundId')?.value;
+  const amount = document.getElementById('withdrawAmount')?.value;
+  const note = document.getElementById('withdrawNote')?.value;
+  const ok = withdrawFund(fundId, amount, note);
+  if (ok && typeof closeModal === 'function') {
+    closeModal('fundWithdrawModal');
+  }
+}
+
+function openFundHistoryModal(fundId) {
+  const fund = (state.funds || []).find(f => f.id === fundId);
+  if (!fund) return;
+  const titleEl = document.getElementById('fundHistoryTitle');
+  const subEl = document.getElementById('fundHistorySubtitle');
+  const listEl = document.getElementById('fundHistoryList');
+  if (titleEl) titleEl.textContent = fund.name + ' · History';
+  if (subEl) subEl.textContent = 'Current Balance: ' + fmt(fund.balance) + ' of ' + fmt(fund.target) + ' target';
+
+  const history = (fund.history || []).slice().reverse();
+  if (!history.length) {
+    if (listEl) listEl.innerHTML = '<div class="empty" style="padding:16px 0">No transactions recorded yet for this fund.</div>';
+  } else {
+    if (listEl) {
+      listEl.innerHTML = history.map(tx => {
+        const isDep = tx.type === 'deposit';
+        const d = new Date(tx.ts);
+        const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        return `<div class="fund-history-row">
+          <div>
+            <div style="display:flex;align-items:center">
+              <span class="fund-history-type ${isDep ? 'deposit' : 'withdraw'}">${isDep ? '+ Deposit' : '- Withdraw'}</span>
+              <span style="font-weight:600;font-size:14px">${escapeHtml(tx.note || (isDep ? 'Deposit' : 'Withdrawal'))}</span>
+            </div>
+            <div class="fund-history-date">${dateStr}</div>
+          </div>
+          <div class="fund-history-amt ${isDep ? 'deposit' : 'withdraw'}">${isDep ? '+' : '-'}${fmt(tx.amount)}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+  openModal('fundHistoryModal');
+}
+
 function saveFund(fundData) {
+  if (!fundData || typeof fundData !== 'object' || (typeof Event !== 'undefined' && fundData instanceof Event) || !fundData.name) {
+    const editId = (typeof document !== 'undefined' && document.getElementById('fundEditId')?.value) || '';
+    const name = (typeof document !== 'undefined' && document.getElementById('fundName')?.value) || '';
+    const target = Number(typeof document !== 'undefined' && document.getElementById('fundTarget')?.value) || 0;
+    const initialBalance = Number(typeof document !== 'undefined' && document.getElementById('fundInitBal')?.value) || 0;
+    const icon = (typeof document !== 'undefined' && document.getElementById('fundIconSelect')?.value) || 'shield';
+    const color = (typeof document !== 'undefined' && document.getElementById('fundColorSelect')?.value) || '#10b981';
+    let category = 'emergency';
+    if (icon === 'plane') category = 'trip';
+    else if (icon === 'laptop') category = 'gadget';
+    else if (icon === 'piggy') category = 'savings';
+    fundData = {
+      id: editId || undefined,
+      name,
+      target,
+      initialBalance,
+      category,
+      color,
+      icon
+    };
+  }
+
   if (!fundData || !fundData.name || !fundData.name.trim()) {
     toast('Please enter a fund name');
     return null;
@@ -1174,6 +1455,94 @@ function renderLoans() {
   }).join('');
 }
 
+function getFundIconSvg(icon) {
+  const ic = (icon || '').toLowerCase();
+  if (ic === 'plane' || ic === 'trip' || ic === 'travel') {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.6.5-1.1z"/></svg>';
+  }
+  if (ic === 'laptop' || ic === 'gadget' || ic === 'tech') {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>';
+  }
+  if (ic === 'piggy' || ic === 'piggy-bank' || ic === 'savings' || ic === 'save') {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8.7 3.3 2 4.3V19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-1h4v1a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-2.7c1.3-1 2-2.5 2-4.3 0-2.8-1.5-4.8-2-5.3.3-.6.5-1.2.5-1.7 0-1.1-.9-2-2-2z"/><circle cx="15.5" cy="11.5" r="1.5"/><path d="M7 11h.01"/></svg>';
+  }
+  // Default: shield / emergency
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+}
+
+function renderFunds() {
+  const el = document.getElementById('fundList');
+  if (!el) return;
+  const activeFunds = (state.funds || []).filter(f => !f.deleted);
+
+  const sumRow = document.getElementById('fundsSummaryRow');
+  const sumBadge = document.getElementById('fundsTotalSavedBadge');
+  const sumHint = document.getElementById('fundsSummaryHint');
+
+  if (!activeFunds.length) {
+    if (sumRow) sumRow.style.display = 'none';
+    el.innerHTML = `<div class="empty" style="padding:20px 12px">
+      <span class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+      No dedicated funds yet.<br>Save towards specific targets or build your emergency safety net.
+      <div class="fund-presets">
+        <button class="fund-preset-btn" onclick="saveFund({ name: 'Emergency Fund', target: 100000, category: 'emergency', color: '#10b981', icon: 'shield' })">🛡️ Emergency Fund (₹1L)</button>
+        <button class="fund-preset-btn" onclick="saveFund({ name: 'Goa Trip', target: 30000, category: 'trip', color: '#3b82f6', icon: 'plane' })">✈️ Goa Trip (₹30k)</button>
+        <button class="fund-preset-btn" onclick="saveFund({ name: 'Gadget Fund', target: 75000, category: 'gadget', color: '#8b5cf6', icon: 'laptop' })">💻 Gadget Fund (₹75k)</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  const totalSaved = activeFunds.reduce((s, f) => s + (Number(f.balance) || 0), 0);
+  const totalTarget = activeFunds.reduce((s, f) => s + (Number(f.target) || 0), 0);
+  if (sumRow) sumRow.style.display = 'flex';
+  if (sumBadge) sumBadge.textContent = 'Total Saved: ' + fmt(totalSaved);
+  if (sumHint) sumHint.textContent = activeFunds.length + (activeFunds.length === 1 ? ' active fund' : ' active funds') + ' · Target ' + fmt(totalTarget);
+
+  el.innerHTML = activeFunds.map((fund, idx) => {
+    const prog = getFundProgress(fund);
+    const isComplete = fund.balance >= fund.target;
+    let badgeClass = 'fund-badge';
+    let badgeText = '';
+
+    if (isComplete) {
+      badgeClass += ' complete';
+      badgeText = 'Goal Reached 🎉';
+    } else if (prog.percent >= 50) {
+      badgeClass += ' ontrack';
+      badgeText = prog.percent + '% of target';
+    } else {
+      badgeText = prog.percent + '% (' + fmt(prog.remaining) + ' left)';
+    }
+
+    const iconColor = fund.color || '#10b981';
+    const barColor = isComplete ? 'var(--savings)' : (prog.percent >= 50 ? iconColor : 'var(--wants)');
+
+    return `<div class="fund-item" style="animation-delay:${Math.min(idx * 40, 300)}ms">
+      <div class="fund-head">
+        <div class="fund-head-left">
+          <div class="fund-ic" style="background:${iconColor}20;color:${iconColor}">
+            ${getFundIconSvg(fund.icon)}
+          </div>
+          <div>
+            <div class="fund-title">${escapeHtml(fund.name)}</div>
+            <div class="fund-meta"><b>${fmt(fund.balance)}</b> of ${fmt(fund.target)} · ${prog.percent}% saved</div>
+          </div>
+        </div>
+        <span class="${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="track fund-bar"><i style="width:${prog.percent}%;background:${barColor}"></i></div>
+      <div class="fund-actions">
+        <button class="btn-primary btn-sm" onclick="openDepositModal('${fund.id}')">+ Deposit</button>
+        <button class="btn-ghost btn-sm" onclick="openWithdrawModal('${fund.id}')">- Withdraw</button>
+        <button class="btn-ghost btn-sm" onclick="openFundHistoryModal('${fund.id}')">History</button>
+        <button class="btn-ghost btn-sm" onclick="openFundModal('${fund.id}')">Edit</button>
+        <button class="del" onclick="delFund('${fund.id}')" aria-label="Delete fund"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2m-9 0v14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6"/></svg></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 /* ---------------- Render ---------------- */
 function render(){
   checkMonthReset();
@@ -1237,7 +1606,7 @@ function render(){
     document.getElementById('lastMonthBody').innerHTML=hh;
   }
 
-  renderLoans();renderIncomes();renderExpenses();renderSplitEditor();renderRatioEditor();renderSubManager();renderBackupUI();renderMonthNav();
+  renderLoans();renderFunds();renderIncomes();renderExpenses();renderSplitEditor();renderRatioEditor();renderSubManager();renderBackupUI();renderMonthNav();
   if(document.getElementById('page-insights').classList.contains('active'))renderCharts();
   save();
 }
@@ -1573,6 +1942,47 @@ function renderCharts(){
         <span class="vl ${over?'over':''}"><b>${fmt(spent)}</b> of ${fmt(alloc)} · ${pctTxt}</span></div>
         <div class="track"><i data-w="${p}" style="background:${over?'var(--danger)':c.color}"></i></div></div>`;}).join('');
     requestAnimationFrame(()=>barEl.querySelectorAll('.track>i').forEach(i=>i.style.width=i.dataset.w+'%'));
+  }
+
+  /* --- Dedicated Goal & Emergency Funds in Insights --- */
+  const fundsChartEl = document.getElementById('insightsFundsBody');
+  if (fundsChartEl) {
+    const activeFunds = (state.funds || []).filter(f => !f.deleted);
+    if (!activeFunds.length) {
+      fundsChartEl.innerHTML = '<div class="empty" style="padding:16px 0"><span class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>No active funds created yet. Set up goals on the Home page to track progress here.</div>';
+    } else {
+      const totSaved = activeFunds.reduce((s, f) => s + (Number(f.balance) || 0), 0);
+      const totTarget = activeFunds.reduce((s, f) => s + (Number(f.target) || 0), 0);
+      const overallPct = totTarget > 0 ? Math.min(100, Math.round((totSaved / totTarget) * 100)) : 100;
+      let fHtml = `<div class="between mb12" style="padding:4px 0">
+        <div>
+          <div style="font-size:15px;font-weight:700">Total Funds Accumulated</div>
+          <div class="hint" style="margin:2px 0 0">${fmt(totSaved)} saved across ${activeFunds.length} active ${activeFunds.length === 1 ? 'fund' : 'funds'}</div>
+        </div>
+        <span class="fund-badge ${overallPct >= 100 ? 'complete' : 'ontrack'}">${overallPct}% of ${fmt(totTarget)}</span>
+      </div>
+      <div class="track mb16" style="height:10px;border-radius:99px"><i data-w="${overallPct}" style="background:var(--savings)"></i></div>`;
+
+      fHtml += activeFunds.map(fund => {
+        const prog = getFundProgress(fund);
+        const iconColor = fund.color || '#10b981';
+        const isDone = fund.balance >= fund.target;
+        return `<div class="bvs">
+          <div class="bvs-head">
+            <span class="nm">
+              <span class="cat-ic" style="background:${iconColor}20;color:${iconColor};display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;margin-right:6px">
+                ${getFundIconSvg(fund.icon)}
+              </span>
+              ${escapeHtml(fund.name)}
+            </span>
+            <span class="vl"><b>${fmt(fund.balance)}</b> of ${fmt(fund.target)} · ${prog.percent}%</span>
+          </div>
+          <div class="track"><i data-w="${prog.percent}" style="background:${isDone ? 'var(--savings)' : iconColor}"></i></div>
+        </div>`;
+      }).join('');
+      fundsChartEl.innerHTML = fHtml;
+      requestAnimationFrame(() => fundsChartEl.querySelectorAll('.track>i').forEach(i => i.style.width = i.dataset.w + '%'));
+    }
   }
 
   const map={};state.expenses.filter(e=>!e.deleted&&e.ts>=vmStart()&&e.ts<vmEnd()).forEach(e=>map[e.sub]=(map[e.sub]||0)+e.amount);
