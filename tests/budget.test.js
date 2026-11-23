@@ -242,4 +242,183 @@ describe('FinTraQ 50/30/20 Budgeting Engine', () => {
       assert.equal(stored.subBudgets['needs::Groceries'], 6000);
     });
   });
+
+  describe('Dynamic Inflow Logging & Auto-Expanding Budget (REQ-12)', () => {
+    it('starts with ₹0 total income and ₹0 across Needs, Wants, and Savings budgets on zero base salary', () => {
+      const ctx = createTestContext({ baseSalary: 0, salary: 0, incomes: [] });
+      ctx.applyRatioToBudgets();
+
+      const mIncome = ctx.getMonthlyIncome();
+      assert.equal(mIncome.base, 0);
+      assert.equal(mIncome.extra, 0);
+      assert.equal(mIncome.total, 0);
+
+      assert.equal(ctx.state.salary, 0);
+      assert.equal(ctx.state.budgets.needs, 0);
+      assert.equal(ctx.state.budgets.wants, 0);
+      assert.equal(ctx.state.budgets.savings, 0);
+    });
+
+    it('auto-expands state.salary to ₹30,000 and allocates 50/30/20 budgets on initial inflow', () => {
+      const ctx = createTestContext({ baseSalary: 0, salary: 0, incomes: [] });
+      ctx.setElement('incAmount', { value: '30000' });
+      ctx.setElement('incSource', { value: 'Freelance' });
+      ctx.setElement('incNote', { value: 'Client web project' });
+
+      ctx.saveIncome();
+
+      assert.equal(ctx.state.salary, 30000);
+      assert.equal(ctx.state.budgets.needs, 15000);
+      assert.equal(ctx.state.budgets.wants, 9000);
+      assert.equal(ctx.state.budgets.savings, 6000);
+      assert.equal(
+        ctx.state.budgets.needs + ctx.state.budgets.wants + ctx.state.budgets.savings,
+        30000
+      );
+    });
+
+    it('cumulatively expands state.salary to ₹50,000 and re-splits budgets on second split inflow', () => {
+      const ctx = createTestContext({ baseSalary: 0, salary: 0, incomes: [] });
+
+      // First inflow: ₹30,000
+      ctx.setElement('incAmount', { value: '30000' });
+      ctx.setElement('incSource', { value: 'Client A' });
+      ctx.setElement('incNote', { value: 'Sprint 1' });
+      ctx.saveIncome();
+
+      assert.equal(ctx.state.salary, 30000);
+
+      // Second inflow: ₹20,000
+      ctx.setElement('incAmount', { value: '20000' });
+      ctx.setElement('incSource', { value: 'Client B' });
+      ctx.setElement('incNote', { value: 'Consulting' });
+      ctx.saveIncome();
+
+      assert.equal(ctx.state.salary, 50000);
+      assert.equal(ctx.state.budgets.needs, 25000);
+      assert.equal(ctx.state.budgets.wants, 15000);
+      assert.equal(ctx.state.budgets.savings, 10000);
+      assert.equal(
+        ctx.state.budgets.needs + ctx.state.budgets.wants + ctx.state.budgets.savings,
+        50000
+      );
+    });
+
+    it('dynamically contracts budget back to remaining total when an inflow is deleted', () => {
+      const ctx = createTestContext({ baseSalary: 0, salary: 0, incomes: [] });
+
+      // Add two inflows: ₹30,000 and ₹20,000
+      ctx.setElement('incAmount', { value: '30000' });
+      ctx.setElement('incSource', { value: 'Design project' });
+      ctx.setElement('incNote', { value: '' });
+      ctx.saveIncome();
+
+      ctx.setElement('incAmount', { value: '20000' });
+      ctx.setElement('incSource', { value: 'Bonus' });
+      ctx.setElement('incNote', { value: '' });
+      ctx.saveIncome();
+
+      assert.equal(ctx.state.salary, 50000);
+      assert.equal(ctx.state.incomes.length, 2);
+
+      const bonusItem = ctx.state.incomes.find(i => i.amount === 20000);
+      assert.ok(bonusItem);
+
+      // Delete the ₹20,000 inflow
+      ctx.delIncome(bonusItem.id);
+
+      assert.equal(bonusItem.deleted, true);
+      assert.equal(ctx.state.salary, 30000);
+      assert.equal(ctx.state.budgets.needs, 15000);
+      assert.equal(ctx.state.budgets.wants, 9000);
+      assert.equal(ctx.state.budgets.savings, 6000);
+
+      // Delete the first inflow as well -> contracts to 0
+      const firstItem = ctx.state.incomes.find(i => i.amount === 30000);
+      ctx.delIncome(firstItem.id);
+
+      assert.equal(firstItem.deleted, true);
+      assert.equal(ctx.state.salary, 0);
+      assert.equal(ctx.state.budgets.needs, 0);
+      assert.equal(ctx.state.budgets.wants, 0);
+      assert.equal(ctx.state.budgets.savings, 0);
+    });
+
+    it('dynamically expands custom budget presets (60/20/20 and 70/20/10) with split inflows', () => {
+      const ctx = createTestContext({
+        baseSalary: 0,
+        salary: 0,
+        incomes: [],
+        ratios: { needs: 60, wants: 20, savings: 20 }
+      });
+
+      // Log inflow of ₹40,000 under 60/20/20
+      ctx.setElement('incAmount', { value: '40000' });
+      ctx.setElement('incSource', { value: 'Freelance dev' });
+      ctx.setElement('incNote', { value: '' });
+      ctx.saveIncome();
+
+      assert.equal(ctx.state.salary, 40000);
+      assert.equal(ctx.state.budgets.needs, 24000); // 60%
+      assert.equal(ctx.state.budgets.wants, 8000);  // 20%
+      assert.equal(ctx.state.budgets.savings, 8000); // 20%
+      assert.equal(
+        ctx.state.budgets.needs + ctx.state.budgets.wants + ctx.state.budgets.savings,
+        40000
+      );
+
+      // Switch to 70/20/10 preset and log another ₹10,000 inflow
+      ctx.state.ratios = { needs: 70, wants: 20, savings: 10 };
+      ctx.setElement('incAmount', { value: '10000' });
+      ctx.setElement('incSource', { value: 'Tutoring' });
+      ctx.setElement('incNote', { value: '' });
+      ctx.saveIncome();
+
+      assert.equal(ctx.state.salary, 50000);
+      assert.equal(ctx.state.budgets.needs, 35000); // 70% of 50k
+      assert.equal(ctx.state.budgets.wants, 10000); // 20% of 50k
+      assert.equal(ctx.state.budgets.savings, 5000); // 10% of 50k
+      assert.equal(
+        ctx.state.budgets.needs + ctx.state.budgets.wants + ctx.state.budgets.savings,
+        50000
+      );
+    });
+
+    it('combines optional base salary with freelance inflows accurately', () => {
+      const ctx = createTestContext({
+        baseSalary: 40000,
+        salary: 40000,
+        incomes: [],
+        ratios: { needs: 50, wants: 30, savings: 20 }
+      });
+
+      const initialIncome = ctx.getMonthlyIncome();
+      assert.equal(initialIncome.base, 40000);
+      assert.equal(initialIncome.extra, 0);
+      assert.equal(initialIncome.total, 40000);
+
+      // Log freelance inflow of ₹15,000
+      ctx.setElement('incAmount', { value: '15000' });
+      ctx.setElement('incSource', { value: 'Weekend Consulting' });
+      ctx.setElement('incNote', { value: '' });
+      ctx.saveIncome();
+
+      const combinedIncome = ctx.getMonthlyIncome();
+      assert.equal(combinedIncome.base, 40000);
+      assert.equal(combinedIncome.extra, 15000);
+      assert.equal(combinedIncome.total, 55000);
+
+      assert.equal(ctx.state.salary, 55000);
+      // 50% of 55,000 = 27,500
+      assert.equal(ctx.state.budgets.needs, 27500);
+      // 30% of 55,000 = 16,500
+      assert.equal(ctx.state.budgets.wants, 16500);
+      // 20% of 55,000 = 11,000
+      assert.equal(ctx.state.budgets.savings, 11000);
+      assert.equal(
+        ctx.state.budgets.needs + ctx.state.budgets.wants + ctx.state.budgets.savings,
+        55000
+      );
+    });
+  });
 });

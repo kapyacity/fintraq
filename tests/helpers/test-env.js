@@ -149,6 +149,7 @@ export function createTestContext(initialStateOverrides = null) {
 
   const mockWindow = {};
 
+  let vmContext = null;
   const sandbox = {
     // Globals
     console,
@@ -182,6 +183,15 @@ export function createTestContext(initialStateOverrides = null) {
     },
     render: () => {
       renders++;
+      if (vmContext && vmContext.__fintraq) {
+        const f = vmContext.__fintraq;
+        const now = new Date();
+        const m = f.getMonthlyIncome(f.startOfMonth(now), f.endOfMonth(now));
+        if (f.state.salary !== m.total) {
+          f.state.salary = m.total;
+          f.applyRatioToBudgets();
+        }
+      }
     },
     broadcastSync: () => {
       syncBroadcasts++;
@@ -204,7 +214,7 @@ export function createTestContext(initialStateOverrides = null) {
     renderIncomes: () => {}
   };
 
-  const vmContext = vm.createContext(sandbox);
+  vmContext = vm.createContext(sandbox);
   compiledScript.runInContext(vmContext);
 
   const exports = vmContext.__fintraq;
@@ -227,6 +237,9 @@ export function createTestContext(initialStateOverrides = null) {
     openModalCalls,
     localStorage: mockLocalStorage,
     document: mockDocument,
+    render: () => {
+      sandbox.render();
+    },
     setElement: (id, props) => {
       const el = getOrCreateElement(id);
       Object.assign(el, props);
