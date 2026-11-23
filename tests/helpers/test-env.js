@@ -34,6 +34,27 @@ if (b2StartIndex === -1 || b2EndIndex === -1) {
 
 const block2Code = htmlContent.slice(b2StartIndex, b2EndIndex);
 
+// Extract Block 3: Google Sheets Audit Sync Engine
+const b3StartMarker = '/* ---------------- Google Sheets Audit Sync Engine ---------------- */';
+const b3EndMarker = '/* ---------------- P2P WebRTC Auto-Sync Engine (PeerJS + BroadcastChannel) ---------------- */';
+const b3StartIndex = htmlContent.indexOf(b3StartMarker);
+const b3EndIndex = htmlContent.indexOf(b3EndMarker);
+
+if (b3StartIndex === -1 || b3EndIndex === -1) {
+  throw new Error('Could not locate Google Sheets code block in index.html');
+}
+
+const block3Code = htmlContent.slice(b3StartIndex, b3EndIndex);
+
+// Extract Block 4: Expense logging functions
+const expStartMarker = 'function saveExpense()';
+const expEndMarker = '/* ---------------- Charts (native SVG/CSS) ---------------- */';
+const expStartIndex = htmlContent.indexOf(expStartMarker);
+const expEndIndex = htmlContent.indexOf(expEndMarker);
+const expenseCode = (expStartIndex !== -1 && expEndIndex !== -1)
+  ? htmlContent.slice(expStartIndex, expEndIndex)
+  : '';
+
 // Bridge code to capture closure variables and export them onto globalThis.__fintraq
 const bridgeCode = `
 globalThis.__fintraq = {
@@ -94,11 +115,20 @@ globalThis.__fintraq = {
   delFund,
   getFundProgress,
   reconcileStates,
-  createSyncPayload
+  createSyncPayload,
+  saveExpense,
+  delExpense,
+  getGSheetUrl,
+  saveGSheetConfig,
+  renderGSheetUI,
+  sendToGoogleSheet,
+  flushPendingSheetSync,
+  testGSheetConnection,
+  syncAllToGoogleSheet
 };
 `;
 
-const combinedCode = `${block1Code}\n\n${block2Code}\n\n${bridgeCode}`;
+const combinedCode = `${block1Code}\n\n${expenseCode}\n\n${block2Code}\n\n${block3Code}\n\n${bridgeCode}`;
 const compiledScript = new vm.Script(combinedCode, { filename: 'fintraq-core.vm.js' });
 
 /**
@@ -114,6 +144,17 @@ export function createTestContext(initialStateOverrides = null) {
 
   const toasts = [];
   const elements = new Map();
+  const fetchCalls = [];
+  const mockNavigator = {
+    onLine: true
+  };
+  const mockFetch = (url, opts) => {
+    fetchCalls.push({ url, opts });
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ success: true })
+    });
+  };
   let renders = 0;
   let syncBroadcasts = 0;
   const closeModalCalls = [];
@@ -159,7 +200,22 @@ export function createTestContext(initialStateOverrides = null) {
     querySelectorAll: () => []
   };
 
-  const mockWindow = {};
+  const windowListeners = new Map();
+  const mockWindow = {
+    addEventListener: (event, handler) => {
+      if (!windowListeners.has(event)) windowListeners.set(event, []);
+      windowListeners.get(event).push(handler);
+    },
+    removeEventListener: (event, handler) => {
+      if (!windowListeners.has(event)) return;
+      windowListeners.set(event, windowListeners.get(event).filter(h => h !== handler));
+    },
+    dispatchEvent: (event) => {
+      const type = typeof event === 'string' ? event : event?.type;
+      const handlers = windowListeners.get(type) || [];
+      handlers.forEach(h => h(event));
+    }
+  };
 
   let vmContext = null;
   const sandbox = {
@@ -183,11 +239,14 @@ export function createTestContext(initialStateOverrides = null) {
     clearTimeout,
     setInterval,
     clearInterval,
+    curCat: 'needs',
 
     // Browser mocks
     localStorage: mockLocalStorage,
     document: mockDocument,
     window: mockWindow,
+    navigator: mockNavigator,
+    fetch: mockFetch,
 
     // UI and app spies
     toast: (msg) => {
@@ -225,7 +284,8 @@ export function createTestContext(initialStateOverrides = null) {
     renderLoans: () => {},
     renderIncomes: () => {},
     renderFunds: () => {},
-    renderFundHistory: () => {}
+    renderFundHistory: () => {},
+    renderGSheetUI: () => {}
   };
 
   vmContext = vm.createContext(sandbox);
@@ -241,6 +301,8 @@ export function createTestContext(initialStateOverrides = null) {
   return {
     ...exports,
     toasts,
+    fetchCalls,
+    navigator: mockNavigator,
     get renders() {
       return renders;
     },
@@ -261,6 +323,7 @@ export function createTestContext(initialStateOverrides = null) {
     },
     resetSpies: () => {
       toasts.length = 0;
+      fetchCalls.length = 0;
       renders = 0;
       syncBroadcasts = 0;
       closeModalCalls.length = 0;

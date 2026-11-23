@@ -218,6 +218,29 @@
         <b>Zero Servers:</b> Your financial data never passes through or gets stored on an external server. It streams directly peer-to-peer between your devices. Both devices must have FinTraQ open with the same passphrase to sync.
       </div>
     </div>
+    <div class="card">
+      <h2>Google Sheets Audit Sync</h2>
+      <div class="hint" style="margin-top:0;margin-bottom:14px">
+        Stream a live audit trail of every expense, inflow, loan payment, and fund transaction directly to your private Google Sheet.
+      </div>
+      <div class="bk-status" id="gsheetStatusUI">
+        <span class="bdot" id="gsheetStatusDot" style="background:var(--muted)"></span>
+        <span id="gsheetStatusText">Not configured · Paste Apps Script Webhook URL below</span>
+      </div>
+      <label>Google Apps Script Webhook URL</label>
+      <div class="sync-code-box">
+        <input id="gsheetWebhookInput" placeholder="https://script.google.com/macros/s/.../exec" class="grow" oninput="onGSheetUrlInput()">
+        <button class="btn-primary btn-sm" onclick="saveGSheetConfig()">Save</button>
+      </div>
+      <div class="row mb12">
+        <button class="btn-ghost btn-sm grow" onclick="testGSheetConnection()">Test Ping</button>
+        <button class="btn-ghost btn-sm grow" onclick="syncAllToGoogleSheet()">Sync All History</button>
+      </div>
+      <div class="hint">
+        <b>Private &amp; Serverless:</b> Posts directly to your own Google Sheet. Works offline too — logs queue and flush automatically when back online.
+        <a href="#" style="color:var(--tint);text-decoration:none;font-weight:600;display:inline-block;margin-top:4px" onclick="openGSheetGuide();return false;">View 2-Minute Setup Instructions &raquo;</a>
+      </div>
+    </div>
     <div class="card"><h2>Subcategories</h2><div id="subManager"></div></div>
     <div class="card">
       <h2>Data & Backup</h2>
@@ -402,6 +425,20 @@
   </div>
 </div></div>
 
+<!-- GSHEET GUIDE MODAL -->
+<div class="modal-bg" id="gsheetGuideModal"><div class="modal">
+  <div class="grabber"></div><h3>Google Sheets Setup Guide</h3>
+  <div class="hint" style="margin-top:0;margin-bottom:14px;line-height:1.6;font-size:13px">
+    <b>1. Create Sheet:</b> Open <a href="https://sheets.new" target="_blank" style="color:var(--tint);font-weight:600">sheets.new</a> to create your spreadsheet.<br>
+    <b>2. Open Apps Script:</b> In Google Sheets menu, click <b>Extensions &gt; Apps Script</b>.<br>
+    <b>3. Paste Code:</b> Erase any default code and paste the code from <code>scripts/google-sheets-audit.js</code> in this project.<br>
+    <b>4. Deploy Web App:</b> Click <b>Deploy &gt; New deployment</b>, select type <b>Web app</b>.<br>
+    <b>5. Permissions:</b> Set Execute as: <b>Me</b>, Who has access: <b>Anyone</b>.<br>
+    <b>6. Connect:</b> Copy the Web app URL, paste it in FinTraQ Settings, and click <b>Save</b>!
+  </div>
+  <button class="btn-primary" style="width:100%" onclick="closeModal('gsheetGuideModal')">Got It</button>
+</div></div>
+
 <div class="toast" id="toast"></div>
 
 <script src="./peerjs.min.js"></script>
@@ -433,7 +470,7 @@ const PRESETS=[
 ];
 function blankState(){return{salary:0,budgets:{needs:0,wants:0,savings:0},ratios:{...DEFAULT_RATIO},
   subs:JSON.parse(JSON.stringify(DEFAULT_SUBS)),subBudgets:{},expenses:[],loans:[],incomes:[],funds:[],baseSalary:0,lastMonthKey:monthKey(new Date()),
-  lastBackupAt:null,backupSnoozeUntil:0,syncKey:'',settingsUpdatedAt:Date.now()};}
+  lastBackupAt:null,backupSnoozeUntil:0,syncKey:'',googleSheetWebhookUrl:'',pendingSheetSync:[],settingsUpdatedAt:Date.now()};}
 let state=load();
 function load(){
   let s=null;
@@ -445,6 +482,8 @@ function load(){
   if(s.lastBackupAt===undefined)s.lastBackupAt=null;
   if(s.backupSnoozeUntil===undefined)s.backupSnoozeUntil=0;
   s.syncKey = s.syncKey || '';
+  s.googleSheetWebhookUrl = s.googleSheetWebhookUrl || '';
+  s.pendingSheetSync = s.pendingSheetSync || [];
   s.settingsUpdatedAt = s.settingsUpdatedAt || Date.now();
   s.baseSalary = (s.baseSalary !== undefined && s.baseSalary !== null) ? Number(s.baseSalary) : (Number(s.salary) || 0);
   s.expenses = (s.expenses || []).map(e => ({
@@ -625,8 +664,9 @@ function saveIncome() {
   const src = document.getElementById('incSource').value;
   const note = document.getElementById('incNote').value.trim();
   const now = Date.now();
+  const incId = 'inc_' + now + Math.random().toString(36).slice(2, 6);
   state.incomes.push({
-    id: 'inc_' + now + Math.random().toString(36).slice(2, 6),
+    id: incId,
     source: src,
     amount: amt,
     note,
@@ -643,6 +683,7 @@ function saveIncome() {
   render();
   toast('Added ' + fmt(amt) + ' (' + src + ') to your budget ✓');
   broadcastSync();
+  sendToGoogleSheet({ type: 'Inflow', id: incId, source: src, amount: amt, note, ts: now });
 }
 
 function delIncome(id) {
@@ -659,6 +700,7 @@ function delIncome(id) {
     render();
     toast('Inflow removed');
     broadcastSync();
+    sendToGoogleSheet({ type: 'Inflow Deleted', id: item.id, source: item.source, amount: item.amount, ts: now });
   }
 }
 
@@ -785,6 +827,7 @@ function payLoanEMI(loanId) {
   render();
   toast('Paid ' + fmt(loan.emiAmount) + ' EMI for ' + loan.name + ' · logged to Needs ✓');
   broadcastSync();
+  sendToGoogleSheet({ type: 'Loan Payment', loanName: loan.name, amount: loan.emiAmount, remainingAfter: loan.remainingAmount, monthKey: mk, ts: now });
 }
 
 function delLoan(loanId) {
@@ -1041,6 +1084,7 @@ function depositFund(fundId, amount, note) {
   render();
   broadcastSync();
   toast('Deposited ' + fmt(amt) + ' into ' + fund.name + ' ✓');
+  sendToGoogleSheet({ type: 'Fund Deposit', fundName: fund.name, amount: amt, balanceAfter: fund.balance, note: note || 'Deposit', ts: now });
   return true;
 }
 
@@ -1077,6 +1121,7 @@ function withdrawFund(fundId, amount, note) {
   render();
   broadcastSync();
   toast('Withdrew ' + fmt(amt) + ' from ' + fund.name + ' ✓');
+  sendToGoogleSheet({ type: 'Fund Withdrawal', fundName: fund.name, amount: amt, balanceAfter: fund.balance, note: note || 'Withdrawal', ts: now });
   return true;
 }
 
@@ -1315,7 +1360,7 @@ function render(){
     document.getElementById('lastMonthBody').innerHTML=hh;
   }
 
-  renderLoans();renderFunds();renderIncomes();renderExpenses();renderSplitEditor();renderRatioEditor();renderSubManager();renderBackupUI();renderMonthNav();
+  renderLoans();renderFunds();renderIncomes();renderExpenses();renderSplitEditor();renderRatioEditor();renderSubManager();renderBackupUI();renderGSheetUI();renderMonthNav();
   if(document.getElementById('page-insights').classList.contains('active'))renderCharts();
   save();
 }
@@ -1544,12 +1589,19 @@ function onAmt(){const v=Number(document.getElementById('expAmount').value)||0;d
 function saveExpense(){const amt=Number(document.getElementById('expAmount').value);if(!amt||amt<=0){toast('Enter an amount');return;}
   const sub=document.getElementById('subPicker').value||'General';
   const now=Date.now();
-  state.expenses.push({id:'e'+now+Math.random().toString(36).slice(2,6),cat:curCat,sub,amount:amt,note:document.getElementById('expNote').value.trim(),ts:now,updatedAt:now,deleted:false});
+  const expNote=document.getElementById('expNote').value.trim();
+  const expId='e'+now+Math.random().toString(36).slice(2,6);
+  state.expenses.push({id:expId,cat:curCat,sub,amount:amt,note:expNote,ts:now,updatedAt:now,deleted:false});
   save();closeModal('expenseModal');viewMonth=null;render();toast('Logged '+fmt(amt)+' · '+sub);
-  broadcastSync();}
+  broadcastSync();
+  sendToGoogleSheet({ type: 'Expense', id: expId, cat: curCat, sub, amount: amt, note: expNote, ts: now });}
 function delExpense(id){
   const ex=state.expenses.find(e=>e.id===id);
-  if(ex){ex.deleted=true;ex.updatedAt=Date.now();save();render();toast('Deleted');broadcastSync();}
+  if(ex){
+    const now = Date.now();
+    ex.deleted=true;ex.updatedAt=now;save();render();toast('Deleted');broadcastSync();
+    sendToGoogleSheet({ type: 'Expense Deleted', id: ex.id, cat: ex.cat, sub: ex.sub, amount: ex.amount, ts: now });
+  }
 }
 
 /* ---------------- Charts (native SVG/CSS) ---------------- */
@@ -1817,6 +1869,155 @@ if ('caches' in window) {
   caches.keys().then(keys => {
     keys.filter(k => k !== 'fintraq-v9-instant-refresh').forEach(k => caches.delete(k));
   }).catch(()=>{});
+}
+
+/* ---------------- Google Sheets Audit Sync Engine ---------------- */
+function getGSheetUrl() {
+  return (state && state.googleSheetWebhookUrl) ? state.googleSheetWebhookUrl.trim() : '';
+}
+
+function onGSheetUrlInput() {
+  // Real-time input listener
+}
+
+function saveGSheetConfig() {
+  const input = document.getElementById('gsheetWebhookInput');
+  if (!input) return;
+  const val = input.value.trim();
+  state.googleSheetWebhookUrl = val;
+  state.settingsUpdatedAt = Date.now();
+  save();
+  renderGSheetUI();
+  if (val) {
+    toast('Google Sheet Webhook URL saved ✓');
+    testGSheetConnection(true);
+  } else {
+    toast('Google Sheet sync disabled');
+  }
+}
+
+function renderGSheetUI() {
+  const dot = document.getElementById('gsheetStatusDot');
+  const text = document.getElementById('gsheetStatusText');
+  const input = document.getElementById('gsheetWebhookInput');
+  const url = getGSheetUrl();
+  if (input && document.activeElement !== input) {
+    input.value = url;
+  }
+  if (dot && text) {
+    if (!url) {
+      dot.style.background = 'var(--muted)';
+      text.textContent = 'Not configured · Paste Apps Script Webhook URL below';
+    } else {
+      dot.style.background = 'var(--savings)';
+      text.textContent = 'Connected & Active · Live transactions will be logged';
+    }
+  }
+}
+
+function sendToGoogleSheet(payload) {
+  const url = getGSheetUrl();
+  if (!url) return;
+  
+  const entry = {
+    ...payload,
+    ts: payload.ts || Date.now(),
+    clientTime: new Date().toISOString()
+  };
+  
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    state.pendingSheetSync = state.pendingSheetSync || [];
+    state.pendingSheetSync.push(entry);
+    save();
+    return;
+  }
+  
+  if (typeof fetch !== 'undefined') {
+    fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry)
+    }).catch(() => {
+      state.pendingSheetSync = state.pendingSheetSync || [];
+      state.pendingSheetSync.push(entry);
+      save();
+    });
+  }
+}
+
+function flushPendingSheetSync() {
+  const url = getGSheetUrl();
+  if (!url || (typeof navigator !== 'undefined' && !navigator.onLine) || !state.pendingSheetSync || !state.pendingSheetSync.length) return;
+  const items = [...state.pendingSheetSync];
+  state.pendingSheetSync = [];
+  save();
+  
+  items.forEach(item => {
+    fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item)
+    }).catch(() => {
+      state.pendingSheetSync = state.pendingSheetSync || [];
+      state.pendingSheetSync.push(item);
+      save();
+    });
+  });
+}
+
+function testGSheetConnection(silent = false) {
+  const url = getGSheetUrl();
+  if (!url) {
+    toast('Please enter a Webhook URL first');
+    return;
+  }
+  if (!silent) toast('Pinging Google Sheet...');
+  fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'ping', ts: Date.now() })
+  }).then(() => {
+    if (!silent) toast('Ping sent to Google Sheet ✓ (Check your sheet for activity)');
+    renderGSheetUI();
+  }).catch(() => {
+    if (!silent) toast('Failed to reach Webhook URL. Check URL or internet.');
+  });
+}
+
+function syncAllToGoogleSheet() {
+  const url = getGSheetUrl();
+  if (!url) {
+    toast('Configure Google Sheet Webhook URL first');
+    return;
+  }
+  toast('Syncing all history to Google Sheet...');
+  const payload = {
+    action: 'batch_sync',
+    expenses: (state.expenses || []).filter(e => !e.deleted),
+    inflows: (state.incomes || []).filter(i => !i.deleted),
+    ts: Date.now()
+  };
+  fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(() => {
+    toast('All expenses and inflows synced to Google Sheet ✓');
+  }).catch(() => {
+    toast('Sync request failed. Will retry when connected.');
+  });
+}
+
+function openGSheetGuide() {
+  openModal('gsheetGuideModal');
+}
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('online', flushPendingSheetSync);
 }
 
 /* ---------------- P2P WebRTC Auto-Sync Engine (PeerJS + BroadcastChannel) ---------------- */

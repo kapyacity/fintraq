@@ -3,11 +3,12 @@
    IMPORTANT: bump CACHE_VERSION every time you deploy a new index.html,
    otherwise returning users keep seeing the old cached version.
    ------------------------------------------------------------------ */
-const CACHE_VERSION = 'fintraq-v15-dedup';
+const CACHE_VERSION = 'fintraq-v16-gsheets';
 
 const ASSETS = [
   './',
   './index.html',
+  './css/app.css',
   './peerjs.min.js',
   './manifest.webmanifest',
   './icon-192.png',

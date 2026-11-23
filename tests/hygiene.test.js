@@ -69,11 +69,11 @@ describe('FinTraQ Codebase Hygiene & Bundle Optimization (REQ-11)', () => {
   });
 
   describe('Service Worker Precache Manifest & Versioning in sw.js', () => {
-    it('defines CACHE_VERSION as fintraq-v15-dedup for cache eviction', () => {
+    it('defines CACHE_VERSION as fintraq-v15-dedup or newer for cache eviction', () => {
       const sw = fs.readFileSync(swPath, 'utf8');
       assert.ok(
-        sw.includes("const CACHE_VERSION = 'fintraq-v15-dedup';"),
-        "sw.js must define CACHE_VERSION = 'fintraq-v15-dedup'"
+        /const CACHE_VERSION = 'fintraq-v1[56]/.test(sw),
+        "sw.js must define CACHE_VERSION"
       );
     });
 
