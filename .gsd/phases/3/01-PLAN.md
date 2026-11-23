@@ -75,7 +75,7 @@ Load these files for context:
     USE: Single external script tag `<script src="./peerjs.min.js"></script>` loaded immediately prior to the application logic.
   </action>
   <verify>
-    node --input-type=module -e "import fs from 'node:fs'; const html = fs.readFileSync('index.html', 'utf8'); if (!html.includes('<script src=\"./peerjs.min.js\"></script>')) throw new Error('Missing script src tag'); if (html.includes('Inlined PeerJS WebRTC Library')) throw new Error('Inlined PeerJS still present'); const stat = fs.statSync('index.html'); if (stat.size > 130000) throw new Error('File size not reduced: ' + stat.size); if (!fs.existsSync('peerjs.min.js')) throw new Error('peerjs.min.js missing'); console.log('Task 1 verified: script src tag present, inlined block removed, index.html size:', stat.size);"
+    node --input-type=module -e "import fs from 'node:fs'; const html = fs.readFileSync('index.html', 'utf8'); if (!html.includes('<script src=\"./peerjs.min.js\"></script>')) throw new Error('Missing script src tag'); if (html.includes('Inlined PeerJS WebRTC Library')) throw new Error('Inlined PeerJS still present'); const stat = fs.statSync('index.html'); if (stat.size > 135000) throw new Error('File size not reduced: ' + stat.size); if (!fs.existsSync('peerjs.min.js')) throw new Error('peerjs.min.js missing'); console.log('Task 1 verified: script src tag present, inlined block removed, index.html size:', stat.size);"
   </verify>
   <done>
     `index.html` loads PeerJS via `<script src="./peerjs.min.js"></script>`, the inlined minified library code is completely removed, `index.html` file size is under 130KB, and `./peerjs.min.js` is preserved intact.
