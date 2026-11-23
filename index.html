@@ -21,68 +21,8 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="shortcut icon" href="./icon-192.png">
 <link rel="stylesheet" href="./css/app.css">
-<style>
-/* Guaranteed inline styles for App Lock Overlay (offline & cache-proof) */
-.app-lock-overlay{position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;z-index:999999;background:var(--bg,#f7f5f2);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
-@media(prefers-color-scheme:dark){.app-lock-overlay{background:var(--bg,#0b0b0d)}}
-.app-lock-card{width:100%;max-width:320px;text-align:center;box-sizing:border-box}
-.app-lock-icon{width:60px;height:60px;border-radius:18px;background:var(--tint-weak,#ffede0);color:var(--tint,#ef5f0c);display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
-.pin-dots{display:flex;justify-content:center;gap:12px;margin:12px 0 16px}
-.pdot{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted,#8c877e);background:transparent;transition:all .15s}
-.pdot.filled{background:var(--tint,#ef5f0c);border-color:var(--tint,#ef5f0c);transform:scale(1.15)}
-.pin-error{color:var(--danger,#e6483c);font-size:13px;font-weight:600;margin-bottom:12px}
-.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:260px;margin:0 auto}
-.pin-key{height:58px;border-radius:50%;background:var(--card,#ffffff);color:var(--ink,#1b1a18);font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;border:1px solid var(--hair2,#e6ded4);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-.pin-key:active{background:var(--bg2,#efe9e3);transform:scale(.94)}
-.pin-key.pin-fn{background:transparent;border-color:transparent;color:var(--muted,#8c877e);font-size:16px}
-</style>
 </head>
 <body>
-<!-- APP LOCK OVERLAY -->
-<div id="appLockOverlay" class="app-lock-overlay">
-  <div class="app-lock-card">
-    <div class="app-lock-icon">
-      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-      </svg>
-    </div>
-    <h2 style="margin:10px 0 4px;font-size:20px;font-weight:700">FinTraQ Protected</h2>
-    <p style="color:var(--muted);font-size:13px;margin:0 0 14px" id="lockPromptText">Enter Master Code to unlock</p>
-    
-    <div class="pin-dots" id="pinDots">
-      <span class="pdot"></span><span class="pdot"></span><span class="pdot"></span>
-      <span class="pdot"></span><span class="pdot"></span><span class="pdot"></span>
-    </div>
-    <div id="pinErrorMsg" class="pin-error" style="display:none">Incorrect code. Try again.</div>
-
-    <!-- Direct Input for Mobile / Hardware Keyboard -->
-    <div style="margin-bottom:14px">
-      <input id="pinDirectInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6"
-        autocomplete="off" placeholder="••••••" autofocus
-        style="width:160px;margin:0 auto;text-align:center;letter-spacing:10px;font-size:24px;font-weight:700;padding:10px;background:var(--bg2);border:2px solid var(--hair2);border-radius:12px;color:var(--ink);display:block"
-        oninput="onPinDirectInput(this.value)">
-    </div>
-
-    <div class="pin-keypad">
-      <button type="button" class="pin-key" onclick="pressPin('1')">1</button>
-      <button type="button" class="pin-key" onclick="pressPin('2')">2</button>
-      <button type="button" class="pin-key" onclick="pressPin('3')">3</button>
-      <button type="button" class="pin-key" onclick="pressPin('4')">4</button>
-      <button type="button" class="pin-key" onclick="pressPin('5')">5</button>
-      <button type="button" class="pin-key" onclick="pressPin('6')">6</button>
-      <button type="button" class="pin-key" onclick="pressPin('7')">7</button>
-      <button type="button" class="pin-key" onclick="pressPin('8')">8</button>
-      <button type="button" class="pin-key" onclick="pressPin('9')">9</button>
-      <button type="button" class="pin-key pin-fn" onclick="clearPin()">C</button>
-      <button type="button" class="pin-key" onclick="pressPin('0')">0</button>
-      <button type="button" class="pin-key pin-fn" onclick="backspacePin()">&larr;</button>
-    </div>
-    <div style="margin-top:14px">
-      <a href="#" style="color:var(--muted);font-size:12px;text-decoration:none" onclick="forgotPinPrompt();return false;">Forgot Master Code?</a>
-    </div>
-  </div>
-</div>
 <header>
   <div class="between" style="width:100%">
     <div class="brand">
@@ -99,18 +39,9 @@
       </svg>
       <h1>FinTraQ</h1>
     </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div id="syncBadge" class="sync-badge" title="P2P Auto-Sync status" onclick="goToSyncSettings()">
-        <span class="sync-dot"></span>
-        <span class="sync-text" id="syncBadgeText">Sync off</span>
-      </div>
-      <button type="button" class="btn-ghost btn-sm" id="headerLockBtn" style="padding:5px 10px;border-radius:99px;font-size:12px;line-height:1;display:flex;align-items:center;gap:4px" onclick="lockAppNow()" title="Lock App Now">
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-        <span>Lock</span>
-      </button>
+    <div id="syncBadge" class="sync-badge" title="P2P Auto-Sync status" onclick="goToSyncSettings()">
+      <span class="sync-dot"></span>
+      <span class="sync-text" id="syncBadgeText">Sync off</span>
     </div>
   </div>
   <div class="sub" id="monthLabel"></div>
@@ -315,25 +246,6 @@
       <div class="hint">
         <b>Private &amp; Serverless:</b> Posts directly to your own Google Sheet. Works offline too — logs queue and flush automatically when back online.
         <a href="#" style="color:var(--tint);text-decoration:none;font-weight:600;display:inline-block;margin-top:4px" onclick="openGSheetGuide();return false;">View 2-Minute Setup Instructions &raquo;</a>
-      </div>
-    </div>
-    <div class="card" id="securityCard">
-      <h2>Security &amp; App Lock</h2>
-      <div class="hint" style="margin-top:0;margin-bottom:14px">
-        Protect your financial data with your 6-digit Master Code. When enabled, FinTraQ requires your PIN upon launch.
-      </div>
-      <div class="bk-status" id="securityStatusUI">
-        <span class="bdot" id="securityStatusDot" style="background:var(--savings)"></span>
-        <span id="securityStatusText">Master Code Active · Protected</span>
-      </div>
-      <label>Master Code (6 Digits)</label>
-      <div class="sync-code-box">
-        <input id="pinCodeInput" type="password" maxlength="6" inputmode="numeric" placeholder="Enter 6-digit code" class="grow">
-        <button class="btn-primary btn-sm" onclick="savePinConfig()">Update PIN</button>
-      </div>
-      <div class="row mb12">
-        <button class="btn-ghost btn-sm grow" onclick="lockAppNow()">Lock App Now</button>
-        <button class="btn-ghost btn-sm grow" id="togglePinBtn" onclick="togglePinEnabled()">Disable Lock</button>
       </div>
     </div>
     <div class="card"><h2>Subcategories</h2><div id="subManager"></div></div>
@@ -565,7 +477,7 @@ const PRESETS=[
 ];
 function blankState(){return{salary:0,budgets:{needs:0,wants:0,savings:0},ratios:{...DEFAULT_RATIO},
   subs:JSON.parse(JSON.stringify(DEFAULT_SUBS)),subBudgets:{},expenses:[],loans:[],incomes:[],funds:[],baseSalary:0,lastMonthKey:monthKey(new Date()),
-  lastBackupAt:null,backupSnoozeUntil:0,syncKey:'',googleSheetWebhookUrl:'',pendingSheetSync:[],lastGSheetBackupAt:0,pinCode:'093377',pinEnabled:true,settingsUpdatedAt:Date.now()};}
+  lastBackupAt:null,backupSnoozeUntil:0,syncKey:'',googleSheetWebhookUrl:'',pendingSheetSync:[],lastGSheetBackupAt:0,settingsUpdatedAt:Date.now()};}
 let state=load();
 function load(){
   let s=null;
@@ -580,8 +492,6 @@ function load(){
   s.googleSheetWebhookUrl = s.googleSheetWebhookUrl || '';
   s.pendingSheetSync = s.pendingSheetSync || [];
   s.lastGSheetBackupAt = s.lastGSheetBackupAt || 0;
-  if(s.pinCode===undefined)s.pinCode='093377';
-  if(s.pinEnabled===undefined)s.pinEnabled=true;
   s.settingsUpdatedAt = s.settingsUpdatedAt || Date.now();
   s.baseSalary = (s.baseSalary !== undefined && s.baseSalary !== null) ? Number(s.baseSalary) : (Number(s.salary) || 0);
   s.expenses = (s.expenses || []).map(e => ({
@@ -1458,7 +1368,7 @@ function render(){
     document.getElementById('lastMonthBody').innerHTML=hh;
   }
 
-  renderLoans();renderFunds();renderIncomes();renderExpenses();renderSplitEditor();renderRatioEditor();renderSubManager();renderBackupUI();renderGSheetUI();renderSecurityUI();renderMonthNav();
+  renderLoans();renderFunds();renderIncomes();renderExpenses();renderSplitEditor();renderRatioEditor();renderSubManager();renderBackupUI();renderGSheetUI();renderMonthNav();
   if(document.getElementById('page-insights').classList.contains('active'))renderCharts();
   save();
 }
@@ -1961,216 +1871,13 @@ let tT;function toast(m){const t=document.getElementById('toast');
 
 render();
 ensurePersistence();
-checkAppLock(true);
+checkWeeklyGSheetBackup();
 
 // Auto-purge stale service worker caches on startup
 if ('caches' in window) {
   caches.keys().then(keys => {
-    keys.filter(k => k !== 'fintraq-v19-lock-fix').forEach(k => caches.delete(k));
+    keys.filter(k => k !== 'fintraq-v20-unlocked').forEach(k => caches.delete(k));
   }).catch(()=>{});
-}
-
-/* ---------------- Security & App Lock Engine ---------------- */
-let enteredPin = '';
-let isAppUnlocked = false;
-
-function checkAppLock(force = false) {
-  const overlay = document.getElementById('appLockOverlay');
-  if (!overlay) return;
-  
-  if (!state.pinEnabled) {
-    overlay.style.display = 'none';
-    isAppUnlocked = true;
-    checkWeeklyGSheetBackup();
-    return;
-  }
-  
-  if (!force) {
-    try {
-      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('fintraq_session_unlocked') === '1') {
-        overlay.style.display = 'none';
-        isAppUnlocked = true;
-        checkWeeklyGSheetBackup();
-        return;
-      }
-    } catch (e) {}
-  }
-  
-  enteredPin = '';
-  updatePinDots();
-  const directInput = document.getElementById('pinDirectInput');
-  if (directInput) {
-    directInput.value = '';
-    setTimeout(() => { try { directInput.focus(); } catch(e) {} }, 100);
-  }
-  overlay.style.display = 'flex';
-  isAppUnlocked = false;
-}
-
-function updatePinDots() {
-  const dots = document.querySelectorAll('#pinDots .pdot');
-  dots.forEach((dot, idx) => {
-    dot.classList.toggle('filled', idx < enteredPin.length);
-  });
-  const err = document.getElementById('pinErrorMsg');
-  if (err && enteredPin.length < 6) err.style.display = 'none';
-}
-
-function onPinDirectInput(val) {
-  enteredPin = String(val || '').replace(/\D/g, '').slice(0, 6);
-  updatePinDots();
-  const directInput = document.getElementById('pinDirectInput');
-  if (directInput && directInput.value !== enteredPin) {
-    directInput.value = enteredPin;
-  }
-  if (enteredPin.length === 6) {
-    verifyEnteredPin(enteredPin);
-  }
-}
-
-function verifyEnteredPin(pin) {
-  const cleanPin = String(pin || '').trim();
-  const masterPin = String(state.pinCode || '093377').trim();
-  
-  if (cleanPin === masterPin || cleanPin === '093377' || cleanPin === masterPin.padStart(6, '0')) {
-    unlockApp();
-    return true;
-  } else {
-    const err = document.getElementById('pinErrorMsg');
-    if (err) err.style.display = 'block';
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      try { navigator.vibrate(200); } catch(e) {}
-    }
-    setTimeout(() => {
-      enteredPin = '';
-      updatePinDots();
-      const directInput = document.getElementById('pinDirectInput');
-      if (directInput) directInput.value = '';
-    }, 500);
-    return false;
-  }
-}
-
-function pressPin(digit) {
-  if (enteredPin.length >= 6) return;
-  enteredPin += String(digit);
-  updatePinDots();
-  const directInput = document.getElementById('pinDirectInput');
-  if (directInput) directInput.value = enteredPin;
-  
-  if (enteredPin.length === 6) {
-    verifyEnteredPin(enteredPin);
-  }
-}
-
-function clearPin() {
-  enteredPin = '';
-  updatePinDots();
-  const directInput = document.getElementById('pinDirectInput');
-  if (directInput) directInput.value = '';
-}
-
-function backspacePin() {
-  if (enteredPin.length > 0) {
-    enteredPin = enteredPin.slice(0, -1);
-    updatePinDots();
-    const directInput = document.getElementById('pinDirectInput');
-    if (directInput) directInput.value = enteredPin;
-  }
-}
-
-function unlockApp() {
-  const overlay = document.getElementById('appLockOverlay');
-  if (overlay) overlay.style.display = 'none';
-  isAppUnlocked = true;
-  try {
-    if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.setItem('fintraq_session_unlocked', '1');
-    }
-  } catch (e) {}
-  toast('Welcome to FinTraQ ✓');
-  checkWeeklyGSheetBackup();
-}
-
-function lockAppNow() {
-  try {
-    if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.removeItem('fintraq_session_unlocked');
-    }
-  } catch (e) {}
-  isAppUnlocked = false;
-  checkAppLock(true);
-  toast('FinTraQ Locked');
-}
-
-function forgotPinPrompt() {
-  if (confirm('Reset Master Code to default (093377)?')) {
-    state.pinCode = '093377';
-    state.pinEnabled = true;
-    save();
-    clearPin();
-    toast('Master Code reset to 093377. Enter it now.');
-  }
-}
-
-if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-  window.addEventListener('keydown', (e) => {
-    const overlay = document.getElementById('appLockOverlay');
-    if (!overlay || overlay.style.display === 'none') return;
-    if (document.activeElement && document.activeElement.id !== 'pinDirectInput' && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
-      return;
-    }
-    if (e.key >= '0' && e.key <= '9') {
-      pressPin(e.key);
-    } else if (e.key === 'Backspace') {
-      backspacePin();
-    } else if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') {
-      clearPin();
-    }
-  });
-}
-
-function savePinConfig() {
-  const input = document.getElementById('pinCodeInput');
-  if (!input) return;
-  const val = input.value.trim();
-  if (val.length !== 6 || !/^\d{6}$/.test(val)) {
-    toast('PIN must be exactly 6 digits');
-    return;
-  }
-  state.pinCode = val;
-  state.pinEnabled = true;
-  state.settingsUpdatedAt = Date.now();
-  save();
-  input.value = '';
-  renderSecurityUI();
-  toast('Master Code updated ✓');
-}
-
-function togglePinEnabled() {
-  state.pinEnabled = !state.pinEnabled;
-  state.settingsUpdatedAt = Date.now();
-  save();
-  renderSecurityUI();
-  toast(state.pinEnabled ? 'Master Code lock enabled' : 'Master Code lock disabled');
-}
-
-function renderSecurityUI() {
-  const dot = document.getElementById('securityStatusDot');
-  const text = document.getElementById('securityStatusText');
-  const toggleBtn = document.getElementById('togglePinBtn');
-  if (dot && text) {
-    if (state.pinEnabled) {
-      dot.style.background = 'var(--savings)';
-      text.textContent = 'Master Code Active · Protected';
-    } else {
-      dot.style.background = 'var(--muted)';
-      text.textContent = 'App Lock Disabled';
-    }
-  }
-  if (toggleBtn) {
-    toggleBtn.textContent = state.pinEnabled ? 'Disable Lock' : 'Enable Lock';
-  }
 }
 
 /* ---------------- Google Sheets Audit Sync Engine ---------------- */

@@ -277,18 +277,3 @@ button:active{transform:scale(.96)}
 .mnav .mid small.link{color:var(--tint);cursor:pointer}
 .seg button[disabled]{opacity:.35;cursor:default}
 .bcol.tap{cursor:pointer}
-
-/* App Lock Overlay Styles */
-.app-lock-overlay{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
-.app-lock-card{width:100%;max-width:340px;text-align:center;animation:fadeUp .4s var(--ease) both}
-.app-lock-icon{width:64px;height:64px;border-radius:20px;background:var(--tint-weak);color:var(--tint);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;box-shadow:0 8px 24px rgba(239,95,12,.15)}
-.pin-dots{display:flex;justify-content:center;gap:14px;margin:20px 0 24px}
-.pdot{width:14px;height:14px;border-radius:50%;border:2px solid var(--hair2);background:transparent;transition:all .2s var(--ease)}
-.pdot.filled{background:var(--tint);border-color:var(--tint);transform:scale(1.15)}
-.pin-error{color:var(--danger);font-size:13px;font-weight:600;margin-bottom:14px;animation:shake .35s ease}
-@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
-.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:280px;margin:0 auto}
-.pin-key{height:62px;border-radius:50%;background:var(--card);color:var(--ink);font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);border:1px solid var(--hair);user-select:none;-webkit-user-select:none;cursor:pointer}
-.pin-key:active{transform:scale(.92);background:var(--bg2)}
-.pin-key.pin-fn{background:transparent;box-shadow:none;border-color:transparent;color:var(--muted);font-size:17px}
-.pin-key.pin-fn:active{background:var(--bg2);color:var(--ink)}

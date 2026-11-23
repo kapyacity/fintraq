@@ -34,14 +34,14 @@ if (b2StartIndex === -1 || b2EndIndex === -1) {
 
 const block2Code = htmlContent.slice(b2StartIndex, b2EndIndex);
 
-// Extract Block 3: Security & App Lock Engine and Google Sheets Audit Sync Engine
-const b3StartMarker = '/* ---------------- Security & App Lock Engine ---------------- */';
+// Extract Block 3: Google Sheets Audit Sync Engine
+const b3StartMarker = '/* ---------------- Google Sheets Audit Sync Engine ---------------- */';
 const b3EndMarker = '/* ---------------- P2P WebRTC Auto-Sync Engine (PeerJS + BroadcastChannel) ---------------- */';
 const b3StartIndex = htmlContent.indexOf(b3StartMarker);
 const b3EndIndex = htmlContent.indexOf(b3EndMarker);
 
 if (b3StartIndex === -1 || b3EndIndex === -1) {
-  throw new Error('Could not locate Security and Google Sheets code block in index.html');
+  throw new Error('Could not locate Google Sheets code block in index.html');
 }
 
 const block3Code = htmlContent.slice(b3StartIndex, b3EndIndex);
@@ -126,19 +126,7 @@ globalThis.__fintraq = {
   testGSheetConnection,
   syncAllToGoogleSheet,
   checkWeeklyGSheetBackup,
-  runWeeklyGSheetBackup,
-  checkAppLock,
-  unlockApp,
-  pressPin,
-  clearPin,
-  backspacePin,
-  lockAppNow,
-  savePinConfig,
-  togglePinEnabled,
-  renderSecurityUI,
-  onPinDirectInput,
-  verifyEnteredPin,
-  forgotPinPrompt
+  runWeeklyGSheetBackup
 };
 `;
 
@@ -316,8 +304,7 @@ export function createTestContext(initialStateOverrides = null) {
     renderIncomes: () => {},
     renderFunds: () => {},
     renderFundHistory: () => {},
-    renderGSheetUI: () => {},
-    renderSecurityUI: () => {}
+    renderGSheetUI: () => {}
   };
 
   vmContext = vm.createContext(sandbox);
