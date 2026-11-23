@@ -1,47 +1,41 @@
 ---
-updated: 2026-11-23T11:33:30+05:30
+updated: 2026-11-23T12:01:00+05:30
 ---
 
 # Project State
 
 ## Current Position
 
-**Milestone:** Initial Architecture Mapping
-**Phase:** 0 - Codebase Discovery
-**Status:** planning
-**Plan:** None (Mapping Complete)
+**Milestone:** v1.0 Baseline & Hardening
+**Phase:** 1 - Test & Baseline Verification
+**Status:** ready-to-plan
+**Plan:** None (Run /plan 1)
 
 ## Last Action
 
-Codebase mapping complete:
-- 12 major system components identified across single-file PWA architecture
-- Core data model and localStorage persistence mapped
-- PeerJS WebRTC P2P sync and BroadcastChannel mechanics documented
-- .gsd/ARCHITECTURE.md and .gsd/STACK.md generated
+Project initialized via `/new-project`:
+- SPEC.md created and marked FINALIZED
+- REQUIREMENTS.md populated with 11 requirements
+- ROADMAP.md structured with 4 phases
+- DECISIONS.md, JOURNAL.md, and TODO.md initialized
 
 ## Next Steps
 
-1. Run `/new-project` to establish baseline `.gsd/SPEC.md` requirements
-2. Formulate initial `.gsd/ROADMAP.md` milestone and phase breakdown
-3. Initialize Git tracking for version control and atomic GSD commits
+1. `/plan 1` — Generate execution plans for Phase 1 (Test & Baseline Verification)
+2. `/execute 1` — Implement Phase 1 plans with atomic commits
+3. `/verify 1` — Validate Phase 1 results with empirical test output
 
 ## Active Decisions
 
 | Decision | Choice | Made | Affects |
 |----------|--------|------|---------|
-| PWA Architecture | Single-file HTML/CSS/JS with embedded PeerJS | 2026-11-23 | All components |
-| Storage Strategy | Offline-first localStorage under `fintraq_v1` | 2026-11-23 | Data model & Sync |
+| Client-Side Storage | Offline-first localStorage under `fintraq_v1` | 2026-11-23 | All phases |
+| P2P WebRTC Sync | PeerJS ephemeral signaling + LWW merge | 2026-11-23 | Sync engine |
 
 ## Blockers
 
-None. (Git repository initialized)
-
-## Recent Commits
-
-- `ff7ddaf` feat: initialize repository with FinTraQ PWA and GSD framework v1.6.0
+None.
 
 ## Concerns
 
-- Single 1950-line index.html bundles markup, styles, app logic, and minified PeerJS library
-- Redundant standalone `peerjs.min.js` alongside inlined PeerJS in `index.html`
-- No automated unit/e2e test suite currently configured
+- Need automated tests before refactoring monolithic index.html to prevent regressions
