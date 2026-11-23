@@ -69,4 +69,18 @@ Enables encrypted direct data transfer directly between user devices.
 
 ---
 
+## Phase 3 Decisions: Codebase Hygiene & PeerJS Deduplication
+
+**Date:** 2026-11-23
+
+### Scope
+- Deduplicate PeerJS library between `peerjs.min.js` and `index.html`.
+- Streamline `sw.js` precache manifest and bump `CACHE_VERSION`.
+
+### Approach
+- Chose: Approach A — Load `peerjs.min.js` via `<script src="./peerjs.min.js"></script>` and delete the ~90KB inlined minified library block from `index.html`.
+- Rationale: Shrinks `index.html` from ~198KB to ~105KB, enables independent browser/SW caching, avoids duplicate byte transmission, and simplifies code maintainability.
+
+---
+
 *Last updated: 2026-11-23*
