@@ -1,6 +1,6 @@
 # ROADMAP.md — Project Roadmap
 
-> **Current Phase**: Phase 2
+> **Current Phase**: Phase 3
 > **Milestone**: v1.0 Baseline & Hardening
 
 ## Must-Haves (from SPEC)
@@ -12,7 +12,7 @@
 - [x] Automated test suite validating budgeting math and loan amortization
 - [x] Cumulative inflow logging without mandatory fixed salary prompt
 - [x] Dedicated Emergency and Goal Funds (Trips, Emergency) with deposit/withdraw actions
-- [ ] Codebase cleanup removing redundant library duplicates
+- [x] Codebase cleanup removing redundant library duplicates
 
 ## Phases
 
@@ -27,7 +27,7 @@
 **Requirements**: REQ-12, REQ-13
 
 ### Phase 3: Codebase Hygiene & Bundle Optimization
-**Status**: ⬜ Not Started
+**Status**: 🟢 Completed
 **Objective**: Eliminate redundant files (e.g. standalone `peerjs.min.js` vs inlined copy), streamline Service Worker precache manifest, and establish clear code separation seams.
 **Requirements**: REQ-11
 
