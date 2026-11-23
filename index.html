@@ -24,7 +24,7 @@
 </head>
 <body>
 <!-- APP LOCK OVERLAY -->
-<div id="appLockOverlay" class="app-lock-overlay" style="display:none">
+<div id="appLockOverlay" class="app-lock-overlay">
   <div class="app-lock-card">
     <div class="app-lock-icon">
       <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -73,9 +73,18 @@
       </svg>
       <h1>FinTraQ</h1>
     </div>
-    <div id="syncBadge" class="sync-badge" title="P2P Auto-Sync status" onclick="goToSyncSettings()">
-      <span class="sync-dot"></span>
-      <span class="sync-text" id="syncBadgeText">Sync off</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="syncBadge" class="sync-badge" title="P2P Auto-Sync status" onclick="goToSyncSettings()">
+        <span class="sync-dot"></span>
+        <span class="sync-text" id="syncBadgeText">Sync off</span>
+      </div>
+      <button type="button" class="btn-ghost btn-sm" id="headerLockBtn" style="padding:5px 10px;border-radius:99px;font-size:12px;line-height:1;display:flex;align-items:center;gap:4px" onclick="lockAppNow()" title="Lock App Now">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span>Lock</span>
+      </button>
     </div>
   </div>
   <div class="sub" id="monthLabel"></div>
@@ -1931,7 +1940,7 @@ checkAppLock();
 // Auto-purge stale service worker caches on startup
 if ('caches' in window) {
   caches.keys().then(keys => {
-    keys.filter(k => k !== 'fintraq-v9-instant-refresh').forEach(k => caches.delete(k));
+    keys.filter(k => k !== 'fintraq-v18-lock-force').forEach(k => caches.delete(k));
   }).catch(()=>{});
 }
 
