@@ -82,6 +82,11 @@ globalThis.__fintraq = {
   saveLoan,
   payLoanEMI,
   delLoan,
+  saveFund,
+  depositFund,
+  withdrawFund,
+  delFund,
+  getFundProgress,
   reconcileStates,
   createSyncPayload
 };
@@ -211,7 +216,9 @@ export function createTestContext(initialStateOverrides = null) {
     renderExpenses: () => {},
     renderCharts: () => {},
     renderLoans: () => {},
-    renderIncomes: () => {}
+    renderIncomes: () => {},
+    renderFunds: () => {},
+    renderFundHistory: () => {}
   };
 
   vmContext = vm.createContext(sandbox);
