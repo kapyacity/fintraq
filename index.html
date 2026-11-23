@@ -592,7 +592,7 @@ const PRESETS=[
   {label:'40 / 30 / 30',r:{needs:40,wants:30,savings:30}},
 ];
 function blankState(){return{salary:0,budgets:{needs:0,wants:0,savings:0},ratios:{...DEFAULT_RATIO},
-  subs:JSON.parse(JSON.stringify(DEFAULT_SUBS)),subBudgets:{},expenses:[],loans:[],incomes:[],baseSalary:0,lastMonthKey:monthKey(new Date()),
+  subs:JSON.parse(JSON.stringify(DEFAULT_SUBS)),subBudgets:{},expenses:[],loans:[],incomes:[],funds:[],baseSalary:0,lastMonthKey:monthKey(new Date()),
   lastBackupAt:null,backupSnoozeUntil:0,syncKey:'',settingsUpdatedAt:Date.now()};}
 let state=load();
 function load(){
@@ -622,6 +622,14 @@ function load(){
     ...i,
     updatedAt: i.updatedAt || i.ts || Date.now(),
     deleted: !!i.deleted
+  }));
+  s.funds = (s.funds || []).map(f => ({
+    ...f,
+    balance: Number(f.balance) || 0,
+    target: Number(f.target) || 0,
+    history: (f.history || []).map(h => ({ ...h, ts: h.ts || Date.now() })),
+    updatedAt: f.updatedAt || f.createdAt || Date.now(),
+    deleted: !!f.deleted
   }));
   if (s.subs && s.subs.needs && !s.subs.needs.includes('Loan / EMI')) {
     s.subs.needs.unshift('Loan / EMI');
@@ -951,6 +959,160 @@ function delLoan(loanId) {
     toast('Loan deleted');
     broadcastSync();
   }
+}
+
+/* ---------------- Dedicated Target & Emergency Funds ---------------- */
+function saveFund(fundData) {
+  if (!fundData || !fundData.name || !fundData.name.trim()) {
+    toast('Please enter a fund name');
+    return null;
+  }
+  const target = Number(fundData.target);
+  if (isNaN(target) || target <= 0) {
+    toast('Please enter a valid target amount');
+    return null;
+  }
+
+  const now = Date.now();
+  let fund = null;
+
+  if (fundData.id) {
+    fund = state.funds.find(f => f.id === fundData.id);
+    if (fund) {
+      fund.name = fundData.name.trim();
+      fund.target = target;
+      if (fundData.category) fund.category = fundData.category;
+      if (fundData.color) fund.color = fundData.color;
+      if (fundData.icon) fund.icon = fundData.icon;
+      fund.updatedAt = now;
+      toast('Fund updated ✓');
+    }
+  }
+
+  if (!fund) {
+    const initBal = Number(fundData.initialBalance || fundData.balance) || 0;
+    fund = {
+      id: fundData.id || ('fund_' + now + Math.random().toString(36).slice(2, 6)),
+      name: fundData.name.trim(),
+      target: target,
+      balance: initBal >= 0 ? initBal : 0,
+      category: fundData.category || 'emergency',
+      color: fundData.color || '#10b981',
+      icon: fundData.icon || 'shield',
+      createdAt: now,
+      updatedAt: now,
+      deleted: false,
+      history: initBal > 0 ? [{
+        id: 'tx_' + now + Math.random().toString(36).slice(2, 6),
+        type: 'deposit',
+        amount: initBal,
+        note: 'Initial deposit',
+        ts: now
+      }] : []
+    };
+    state.funds.push(fund);
+    toast('Fund created ✓');
+  }
+
+  state.settingsUpdatedAt = now;
+  save();
+  if (typeof closeModal === 'function') closeModal('fundModal');
+  render();
+  broadcastSync();
+  return fund;
+}
+
+function depositFund(fundId, amount, note) {
+  const amt = Number(amount);
+  if (isNaN(amt) || amt <= 0) {
+    toast('Please enter a valid deposit amount');
+    return false;
+  }
+  const fund = state.funds.find(f => f.id === fundId);
+  if (!fund || fund.deleted) {
+    toast('Fund not found');
+    return false;
+  }
+
+  fund.balance = (Number(fund.balance) || 0) + amt;
+  fund.history = fund.history || [];
+  const now = Date.now();
+  fund.history.push({
+    id: 'tx_' + now + Math.random().toString(36).slice(2, 6),
+    type: 'deposit',
+    amount: amt,
+    note: note || 'Deposit',
+    ts: now
+  });
+  fund.updatedAt = now;
+  state.settingsUpdatedAt = now;
+
+  save();
+  render();
+  broadcastSync();
+  toast('Deposited ' + fmt(amt) + ' into ' + fund.name + ' ✓');
+  return true;
+}
+
+function withdrawFund(fundId, amount, note) {
+  const amt = Number(amount);
+  if (isNaN(amt) || amt <= 0) {
+    toast('Please enter a valid withdrawal amount');
+    return false;
+  }
+  const fund = state.funds.find(f => f.id === fundId);
+  if (!fund || fund.deleted) {
+    toast('Fund not found');
+    return false;
+  }
+  if (amt > fund.balance) {
+    toast('Cannot withdraw more than available balance (' + fmt(fund.balance) + ')');
+    return false;
+  }
+
+  fund.balance -= amt;
+  fund.history = fund.history || [];
+  const now = Date.now();
+  fund.history.push({
+    id: 'tx_' + now + Math.random().toString(36).slice(2, 6),
+    type: 'withdraw',
+    amount: amt,
+    note: note || 'Withdrawal',
+    ts: now
+  });
+  fund.updatedAt = now;
+  state.settingsUpdatedAt = now;
+
+  save();
+  render();
+  broadcastSync();
+  toast('Withdrew ' + fmt(amt) + ' from ' + fund.name + ' ✓');
+  return true;
+}
+
+function delFund(fundId) {
+  if (typeof confirm === 'function' && !confirm('Delete this fund?')) return false;
+  const fund = state.funds.find(f => f.id === fundId);
+  if (fund) {
+    fund.deleted = true;
+    fund.updatedAt = Date.now();
+    state.settingsUpdatedAt = Date.now();
+    save();
+    render();
+    broadcastSync();
+    toast('Fund deleted');
+    return true;
+  }
+  return false;
+}
+
+function getFundProgress(fund) {
+  if (!fund) return { percent: 0, percentage: 0, remaining: 0 };
+  const target = Number(fund.target) || 0;
+  const balance = Number(fund.balance) || 0;
+  const percent = target > 0 ? Math.min(100, Math.round((balance / target) * 100)) : 100;
+  const remaining = Math.max(0, target - balance);
+  return { percent, percentage: percent, remaining };
 }
 
 function renderLoans() {
@@ -1500,7 +1662,7 @@ async function copyBackup(){
 function importData(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();
   r.onload=()=>{try{const s=JSON.parse(r.result);if(!s.budgets)throw 0;
     if(state.expenses.length&&!confirm('This will replace the data currently on this device. Continue?'))return;
-    state=s;state.ratios=state.ratios||{...DEFAULT_RATIO};state.loans=state.loans||[];state.incomes=state.incomes||[];state.baseSalary=state.baseSalary||state.salary||0;state.settingsUpdatedAt=Date.now();save();render();toast('Backup restored');broadcastSync();}catch(e){toast('Invalid file');}};
+    state=s;state.ratios=state.ratios||{...DEFAULT_RATIO};state.loans=state.loans||[];state.incomes=state.incomes||[];state.funds=state.funds||[];state.baseSalary=state.baseSalary||state.salary||0;state.settingsUpdatedAt=Date.now();save();render();toast('Backup restored');broadcastSync();}catch(e){toast('Invalid file');}};
   r.readAsText(f);ev.target.value='';}
 function hardReset(){
   if(!confirm('Erase all data on this device? This cannot be undone.'))return;
@@ -1693,6 +1855,19 @@ if ('caches' in window) {
     });
     local.incomes = Array.from(incMap.values());
 
+    // 5. Funds: Union by id with updatedAt
+    if (local.funds || remote.funds) {
+      const fundMap = new Map();
+    (local.funds || []).forEach(f => fundMap.set(f.id, f));
+    (remote.funds || []).forEach(rFund => {
+      if (!rFund || !rFund.id) return;
+      const lFund = fundMap.get(rFund.id);
+      if (!lFund) { fundMap.set(rFund.id, rFund); changed = true; }
+      else if ((rFund.updatedAt || rFund.createdAt || 0) > (lFund.updatedAt || lFund.createdAt || 0)) { fundMap.set(rFund.id, rFund); changed = true; }
+    });
+    local.funds = Array.from(fundMap.values());
+    }
+
     // 4. Settings: Last-Write-Wins based on settingsUpdatedAt
     const localSetTime = local.settingsUpdatedAt || 0;
     const remoteSetTime = remote.settingsUpdatedAt || 0;
@@ -1722,6 +1897,7 @@ if ('caches' in window) {
       expenses: state.expenses,
       loans: state.loans,
       incomes: state.incomes,
+      funds: state.funds,
       settingsUpdatedAt: state.settingsUpdatedAt || Date.now()
     };
   }
