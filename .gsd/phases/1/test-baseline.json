@@ -1,0 +1,95 @@
+{
+  "phase": 1,
+  "timestamp": "2026-11-23T12:28:52+05:30",
+  "nodeVersion": "v26.13.1",
+  "npmDependencies": {
+    "dependencies": 0,
+    "devDependencies": 0,
+    "hasZeroExternalDependencies": true
+  },
+  "summary": {
+    "totalTestFiles": 4,
+    "totalSuites": 23,
+    "totalTests": 74,
+    "passed": 74,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "passRate": 1.0,
+    "command": "npm test"
+  },
+  "suites": [
+    {
+      "file": "tests/budget.test.js",
+      "feature": "50/30/20 Budgeting Engine",
+      "tests": 23,
+      "passed": 23,
+      "failed": 0,
+      "coverageAreas": [
+        "Standard 50/30/20 allocation",
+        "Preset ratios (60/20/20, 70/20/10, 40/30/30)",
+        "Rounding remainder absorption and conservation of salary",
+        "Non-100% custom ratio handling",
+        "Subcategory budgeting and catAllocated aggregation"
+      ]
+    },
+    {
+      "file": "tests/loans.test.js",
+      "feature": "Loans & EMI Auto-Logging",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "coverageAreas": [
+        "Loan creation with default and custom remaining amounts",
+        "Due day clamping (1-31)",
+        "Loan updating without altering payment history",
+        "Input validation and soft-deletion tombstones",
+        "Single EMI payment balance decrement and month logging",
+        "Automated expense logging under Needs category",
+        "Same-month duplicate payment rejection and cross-month allowance",
+        "Payoff balance clamping to zero"
+      ]
+    },
+    {
+      "file": "tests/rollover-income.test.js",
+      "feature": "Multi-Stream Inflows & Monthly Rollover Engine",
+      "tests": 16,
+      "passed": 16,
+      "failed": 0,
+      "coverageAreas": [
+        "Multi-stream monthly income calculation (salary + inflows)",
+        "Fallback handling when salary unassigned",
+        "Date range filtering for inflows [from, to)",
+        "Tombstone exclusion for deleted incomes",
+        "Date and month boundary helpers (monthKey, startOfMonth, endOfMonth, startOfWeekMon)",
+        "Currency formatting (fmt with INR commas and rupee symbol)",
+        "Monthly rollover unspent leftover calculation",
+        "Deficit/overspending handling in rollover",
+        "Expense preservation (zero data loss across month changes)"
+      ]
+    },
+    {
+      "file": "tests/sync.test.js",
+      "feature": "Peer-to-Peer LWW Conflict Resolution & Sync Engine",
+      "tests": 24,
+      "passed": 24,
+      "failed": 0,
+      "coverageAreas": [
+        "Disjoint remote expense insertion",
+        "Expenses LWW merge via updatedAt/ts",
+        "Expense soft-deleted tombstone propagation",
+        "Local tombstone preservation against stale resurrection",
+        "Loans LWW merge including remainingAmount and paidMonths",
+        "Loan soft-deleted tombstone propagation",
+        "Incomes LWW merge and tombstone propagation",
+        "Settings LWW merge via settingsUpdatedAt",
+        "Stale/equal remote settings ignored",
+        "Partial remote settings updates handled safely",
+        "Reconciliation idempotency and change detection return boolean",
+        "Malformed and edge-case payload resistance (null, undefined, primitives, missing arrays)",
+        "End-to-end peer state exchange using createSyncPayload"
+      ]
+    }
+  ]
+}
