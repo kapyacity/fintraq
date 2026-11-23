@@ -72,7 +72,7 @@ describe('FinTraQ Codebase Hygiene & Bundle Optimization (REQ-11)', () => {
     it('defines CACHE_VERSION as fintraq-v15-dedup or newer for cache eviction', () => {
       const sw = fs.readFileSync(swPath, 'utf8');
       assert.ok(
-        /const CACHE_VERSION = 'fintraq-v1[5678]/.test(sw),
+        /const CACHE_VERSION = 'fintraq-v1[56789]/.test(sw),
         "sw.js must define CACHE_VERSION"
       );
     });

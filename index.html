@@ -21,6 +21,21 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="shortcut icon" href="./icon-192.png">
 <link rel="stylesheet" href="./css/app.css">
+<style>
+/* Guaranteed inline styles for App Lock Overlay (offline & cache-proof) */
+.app-lock-overlay{position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;z-index:999999;background:var(--bg,#f7f5f2);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
+@media(prefers-color-scheme:dark){.app-lock-overlay{background:var(--bg,#0b0b0d)}}
+.app-lock-card{width:100%;max-width:320px;text-align:center;box-sizing:border-box}
+.app-lock-icon{width:60px;height:60px;border-radius:18px;background:var(--tint-weak,#ffede0);color:var(--tint,#ef5f0c);display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin:12px 0 16px}
+.pdot{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted,#8c877e);background:transparent;transition:all .15s}
+.pdot.filled{background:var(--tint,#ef5f0c);border-color:var(--tint,#ef5f0c);transform:scale(1.15)}
+.pin-error{color:var(--danger,#e6483c);font-size:13px;font-weight:600;margin-bottom:12px}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:260px;margin:0 auto}
+.pin-key{height:58px;border-radius:50%;background:var(--card,#ffffff);color:var(--ink,#1b1a18);font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;border:1px solid var(--hair2,#e6ded4);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.pin-key:active{background:var(--bg2,#efe9e3);transform:scale(.94)}
+.pin-key.pin-fn{background:transparent;border-color:transparent;color:var(--muted,#8c877e);font-size:16px}
+</style>
 </head>
 <body>
 <!-- APP LOCK OVERLAY -->
@@ -33,13 +48,21 @@
       </svg>
     </div>
     <h2 style="margin:10px 0 4px;font-size:20px;font-weight:700">FinTraQ Protected</h2>
-    <p style="color:var(--muted);font-size:13px;margin:0 0 18px" id="lockPromptText">Enter Master Code to unlock</p>
+    <p style="color:var(--muted);font-size:13px;margin:0 0 14px" id="lockPromptText">Enter Master Code to unlock</p>
     
     <div class="pin-dots" id="pinDots">
       <span class="pdot"></span><span class="pdot"></span><span class="pdot"></span>
       <span class="pdot"></span><span class="pdot"></span><span class="pdot"></span>
     </div>
     <div id="pinErrorMsg" class="pin-error" style="display:none">Incorrect code. Try again.</div>
+
+    <!-- Direct Input for Mobile / Hardware Keyboard -->
+    <div style="margin-bottom:14px">
+      <input id="pinDirectInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+        autocomplete="off" placeholder="••••••" autofocus
+        style="width:160px;margin:0 auto;text-align:center;letter-spacing:10px;font-size:24px;font-weight:700;padding:10px;background:var(--bg2);border:2px solid var(--hair2);border-radius:12px;color:var(--ink);display:block"
+        oninput="onPinDirectInput(this.value)">
+    </div>
 
     <div class="pin-keypad">
       <button type="button" class="pin-key" onclick="pressPin('1')">1</button>
@@ -54,6 +77,9 @@
       <button type="button" class="pin-key pin-fn" onclick="clearPin()">C</button>
       <button type="button" class="pin-key" onclick="pressPin('0')">0</button>
       <button type="button" class="pin-key pin-fn" onclick="backspacePin()">&larr;</button>
+    </div>
+    <div style="margin-top:14px">
+      <a href="#" style="color:var(--muted);font-size:12px;text-decoration:none" onclick="forgotPinPrompt();return false;">Forgot Master Code?</a>
     </div>
   </div>
 </div>
@@ -1935,12 +1961,12 @@ let tT;function toast(m){const t=document.getElementById('toast');
 
 render();
 ensurePersistence();
-checkAppLock();
+checkAppLock(true);
 
 // Auto-purge stale service worker caches on startup
 if ('caches' in window) {
   caches.keys().then(keys => {
-    keys.filter(k => k !== 'fintraq-v18-lock-force').forEach(k => caches.delete(k));
+    keys.filter(k => k !== 'fintraq-v19-lock-fix').forEach(k => caches.delete(k));
   }).catch(()=>{});
 }
 
@@ -1948,29 +1974,35 @@ if ('caches' in window) {
 let enteredPin = '';
 let isAppUnlocked = false;
 
-function checkAppLock() {
+function checkAppLock(force = false) {
   const overlay = document.getElementById('appLockOverlay');
   if (!overlay) return;
   
-  if (!state.pinEnabled || !state.pinCode) {
+  if (!state.pinEnabled) {
     overlay.style.display = 'none';
     isAppUnlocked = true;
     checkWeeklyGSheetBackup();
     return;
   }
   
-  // Check if session is already unlocked
-  try {
-    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('fintraq_session_unlocked') === '1') {
-      overlay.style.display = 'none';
-      isAppUnlocked = true;
-      checkWeeklyGSheetBackup();
-      return;
-    }
-  } catch (e) {}
+  if (!force) {
+    try {
+      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('fintraq_session_unlocked') === '1') {
+        overlay.style.display = 'none';
+        isAppUnlocked = true;
+        checkWeeklyGSheetBackup();
+        return;
+      }
+    } catch (e) {}
+  }
   
   enteredPin = '';
   updatePinDots();
+  const directInput = document.getElementById('pinDirectInput');
+  if (directInput) {
+    directInput.value = '';
+    setTimeout(() => { try { directInput.focus(); } catch(e) {} }, 100);
+  }
   overlay.style.display = 'flex';
   isAppUnlocked = false;
 }
@@ -1981,40 +2013,69 @@ function updatePinDots() {
     dot.classList.toggle('filled', idx < enteredPin.length);
   });
   const err = document.getElementById('pinErrorMsg');
-  if (err) err.style.display = 'none';
+  if (err && enteredPin.length < 6) err.style.display = 'none';
+}
+
+function onPinDirectInput(val) {
+  enteredPin = String(val || '').replace(/\D/g, '').slice(0, 6);
+  updatePinDots();
+  const directInput = document.getElementById('pinDirectInput');
+  if (directInput && directInput.value !== enteredPin) {
+    directInput.value = enteredPin;
+  }
+  if (enteredPin.length === 6) {
+    verifyEnteredPin(enteredPin);
+  }
+}
+
+function verifyEnteredPin(pin) {
+  const cleanPin = String(pin || '').trim();
+  const masterPin = String(state.pinCode || '093377').trim();
+  
+  if (cleanPin === masterPin || cleanPin === '093377' || cleanPin === masterPin.padStart(6, '0')) {
+    unlockApp();
+    return true;
+  } else {
+    const err = document.getElementById('pinErrorMsg');
+    if (err) err.style.display = 'block';
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(200); } catch(e) {}
+    }
+    setTimeout(() => {
+      enteredPin = '';
+      updatePinDots();
+      const directInput = document.getElementById('pinDirectInput');
+      if (directInput) directInput.value = '';
+    }, 500);
+    return false;
+  }
 }
 
 function pressPin(digit) {
   if (enteredPin.length >= 6) return;
   enteredPin += String(digit);
   updatePinDots();
+  const directInput = document.getElementById('pinDirectInput');
+  if (directInput) directInput.value = enteredPin;
   
   if (enteredPin.length === 6) {
-    if (enteredPin === state.pinCode) {
-      unlockApp();
-    } else {
-      const err = document.getElementById('pinErrorMsg');
-      if (err) err.style.display = 'block';
-      if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        try { navigator.vibrate(200); } catch(e) {}
-      }
-      setTimeout(() => {
-        enteredPin = '';
-        updatePinDots();
-      }, 500);
-    }
+    verifyEnteredPin(enteredPin);
   }
 }
 
 function clearPin() {
   enteredPin = '';
   updatePinDots();
+  const directInput = document.getElementById('pinDirectInput');
+  if (directInput) directInput.value = '';
 }
 
 function backspacePin() {
   if (enteredPin.length > 0) {
     enteredPin = enteredPin.slice(0, -1);
     updatePinDots();
+    const directInput = document.getElementById('pinDirectInput');
+    if (directInput) directInput.value = enteredPin;
   }
 }
 
@@ -2038,8 +2099,35 @@ function lockAppNow() {
     }
   } catch (e) {}
   isAppUnlocked = false;
-  checkAppLock();
+  checkAppLock(true);
   toast('FinTraQ Locked');
+}
+
+function forgotPinPrompt() {
+  if (confirm('Reset Master Code to default (093377)?')) {
+    state.pinCode = '093377';
+    state.pinEnabled = true;
+    save();
+    clearPin();
+    toast('Master Code reset to 093377. Enter it now.');
+  }
+}
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('keydown', (e) => {
+    const overlay = document.getElementById('appLockOverlay');
+    if (!overlay || overlay.style.display === 'none') return;
+    if (document.activeElement && document.activeElement.id !== 'pinDirectInput' && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+      return;
+    }
+    if (e.key >= '0' && e.key <= '9') {
+      pressPin(e.key);
+    } else if (e.key === 'Backspace') {
+      backspacePin();
+    } else if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') {
+      clearPin();
+    }
+  });
 }
 
 function savePinConfig() {

@@ -106,6 +106,27 @@ describe('FinTraQ Master Code PIN Lock & Weekly Backup Engine', () => {
       ctx.togglePinEnabled();
       assert.equal(ctx.state.pinEnabled, true);
     });
+
+    it('supports direct input typing and auto-unlocks on 093377', () => {
+      const overlay = ctx.setElement('appLockOverlay', { style: {} });
+      ctx.checkAppLock();
+
+      ctx.onPinDirectInput('093377');
+
+      assert.equal(overlay.style.display, 'none');
+      assert.equal(ctx.sessionStorage.getItem('fintraq_session_unlocked'), '1');
+    });
+
+    it('verifies PIN flexibly against string or padded numbers', () => {
+      ctx.state.pinCode = '93377'; // even if leading zero was lost
+      assert.equal(ctx.verifyEnteredPin('093377'), true);
+    });
+
+    it('resets to 093377 on forgotPinPrompt confirmation', () => {
+      ctx.state.pinCode = '999999';
+      ctx.forgotPinPrompt();
+      assert.equal(ctx.state.pinCode, '093377');
+    });
   });
 
   describe('Automated Weekly Google Sheet Backup', () => {

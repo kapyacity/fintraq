@@ -135,7 +135,10 @@ globalThis.__fintraq = {
   lockAppNow,
   savePinConfig,
   togglePinEnabled,
-  renderSecurityUI
+  renderSecurityUI,
+  onPinDirectInput,
+  verifyEnteredPin,
+  forgotPinPrompt
 };
 `;
 

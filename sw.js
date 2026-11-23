@@ -3,7 +3,7 @@
    IMPORTANT: bump CACHE_VERSION every time you deploy a new index.html,
    otherwise returning users keep seeing the old cached version.
    ------------------------------------------------------------------ */
-const CACHE_VERSION = 'fintraq-v18-lock-force';
+const CACHE_VERSION = 'fintraq-v19-lock-fix';
 
 const ASSETS = [
   './',
