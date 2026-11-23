@@ -14,5 +14,5 @@
 | REQ-09 | Automated unit & regression test harness for financial calculations | SPEC Goal 6 | Implemented |
 | REQ-10 | Monolithic index.html modularization (ES modules, split CSS/JS) | SPEC Goal 8 | Pending |
 | REQ-11 | Deduplicate PeerJS library bundle (remove redundant peerjs.min.js) | SPEC Goal 8 | Pending |
-| REQ-12 | Dynamic Inflow Logging & Auto-Expanding Budget (no fixed salary required) | SPEC Goal 2 | Pending |
-| REQ-13 | Dedicated Emergency & Goal Funds with Target Tracking & Deposit/Withdraw | SPEC Goal 3 | Pending |
+| REQ-12 | Dynamic Inflow Logging & Auto-Expanding Budget (no fixed salary required) | SPEC Goal 2 | Implemented |
+| REQ-13 | Dedicated Emergency & Goal Funds with Target Tracking & Deposit/Withdraw | SPEC Goal 3 | Implemented |

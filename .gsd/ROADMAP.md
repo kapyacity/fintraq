@@ -1,6 +1,6 @@
 # ROADMAP.md — Project Roadmap
 
-> **Current Phase**: Phase 1
+> **Current Phase**: Phase 2
 > **Milestone**: v1.0 Baseline & Hardening
 
 ## Must-Haves (from SPEC)
@@ -10,8 +10,8 @@
 - [x] Offline PWA capability with Service Worker caching
 - [x] Local JSON backup/restore and multi-device P2P WebRTC sync
 - [x] Automated test suite validating budgeting math and loan amortization
-- [ ] Cumulative inflow logging without mandatory fixed salary prompt
-- [ ] Dedicated Emergency and Goal Funds (Trips, Emergency) with deposit/withdraw actions
+- [x] Cumulative inflow logging without mandatory fixed salary prompt
+- [x] Dedicated Emergency and Goal Funds (Trips, Emergency) with deposit/withdraw actions
 - [ ] Codebase cleanup removing redundant library duplicates
 
 ## Phases
@@ -22,7 +22,7 @@
 **Requirements**: REQ-09
 
 ### Phase 2: Dynamic Inflows & Dedicated Goal/Emergency Funds
-**Status**: ⬜ Not Started
+**Status**: 🟢 Completed
 **Objective**: Implement cumulative split inflow logging (real-time 50/30/20 budget expansion without fixed salary requirement) and dedicated Target Funds (Emergency, Trips, Sinking Funds) with visual progress and deposit/withdraw actions.
 **Requirements**: REQ-12, REQ-13
 
