@@ -323,9 +323,18 @@ button:active{transform:scale(.96)}
         <div class="hint" id="incomeBreakdownHint" style="margin-top:10px;margin-bottom:0"></div>
       </div>
       <div id="salaryEmpty">
-        <label>Enter your base job monthly salary to begin</label>
-        <div class="row"><input id="salaryInput" type="number" inputmode="numeric" placeholder="e.g. 60000" class="grow"><button class="btn-primary" onclick="saveSalary()">Set</button></div>
-        <div class="hint">FinTraQ splits your total income (Salary + Freelance) 50% Needs · 30% Wants · 20% Savings. You can log on-demand freelance income anytime to dynamically expand your budget.</div>
+        <div class="salary-hero" style="margin-bottom:12px">
+          <div>
+            <div class="lbl">Total Inflow This Month</div>
+            <div class="amt">₹0</div>
+          </div>
+          <div class="row" style="gap:6px">
+            <button class="btn-primary btn-sm" onclick="openIncomeModal()">+ Add Inflow</button>
+          </div>
+        </div>
+        <div class="hint" style="margin-bottom:10px">Budgets auto-expand as inflows arrive. Have a fixed monthly base salary? You can optionally set it below:</div>
+        <div class="row"><input id="salaryInput" type="number" inputmode="numeric" placeholder="Optional base salary (e.g. 50000)" class="grow"><button class="btn-ghost" onclick="saveSalary()">Set Base</button></div>
+
       </div>
     </div>
 
@@ -335,7 +344,7 @@ button:active{transform:scale(.96)}
       <div id="loanList"></div>
     </div>
 
-    <div class="card" id="budgetCard" style="display:none">
+    <div class="card" id="budgetCard">
       <h2>Remaining · This Month</h2>
       <div id="catBudgets"></div>
     </div>
@@ -597,7 +606,7 @@ function load(){
   if(s.backupSnoozeUntil===undefined)s.backupSnoozeUntil=0;
   s.syncKey = s.syncKey || '';
   s.settingsUpdatedAt = s.settingsUpdatedAt || Date.now();
-  s.baseSalary = s.baseSalary || s.salary || 0;
+  s.baseSalary = (s.baseSalary !== undefined && s.baseSalary !== null) ? Number(s.baseSalary) : (Number(s.salary) || 0);
   s.expenses = (s.expenses || []).map(e => ({
     ...e,
     updatedAt: e.updatedAt || e.ts || Date.now(),
@@ -777,6 +786,9 @@ function saveIncome() {
     updatedAt: now,
     deleted: false
   });
+  const mIncome = getMonthlyIncome(startOfMonth(new Date(now)), endOfMonth(new Date(now)));
+  state.salary = mIncome.total;
+  applyRatioToBudgets();
   state.settingsUpdatedAt = now;
   save();
   closeModal('incomeModal');
@@ -788,9 +800,13 @@ function saveIncome() {
 function delIncome(id) {
   const item = state.incomes.find(i => i.id === id);
   if (item) {
+    const now = Date.now();
     item.deleted = true;
-    item.updatedAt = Date.now();
-    state.settingsUpdatedAt = Date.now();
+    item.updatedAt = now;
+    const mIncome = getMonthlyIncome(startOfMonth(new Date(now)), endOfMonth(new Date(now)));
+    state.salary = mIncome.total;
+    applyRatioToBudgets();
+    state.settingsUpdatedAt = now;
     save();
     render();
     toast('Inflow removed');
@@ -1004,7 +1020,7 @@ function render(){
 
   // Calculate live multi-stream income for the active month
   const mIncome = getMonthlyIncome(startOfMonth(now), endOfMonth(now));
-  if (mIncome.total > 0 && state.salary !== mIncome.total) {
+  if (state.salary !== mIncome.total) {
     state.salary = mIncome.total;
     applyRatioToBudgets();
   }
@@ -1012,15 +1028,15 @@ function render(){
   // hero
   const h=now.getHours();const greet=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
   document.getElementById('greet').textContent=greet;
+  const spentTodayAll=totalSpent(startOfDay(now));
   if(state.salary>0){
-    const spentTodayAll=totalSpent(startOfDay(now));
     const monthLeft=state.salary-totalSpent(startOfMonth(now));
     document.getElementById('heroBig').textContent=fmt(spentTodayAll)+' spent today';
     document.getElementById('heroMeta').textContent=fmt(monthLeft)+' left of your monthly budget · '+
       now.toLocaleDateString('en-US',{weekday:'long',day:'numeric',month:'long'});
   }else{
-    document.getElementById('heroBig').textContent='Welcome to FinTraQ';
-    document.getElementById('heroMeta').textContent='Set your salary below to get started.';
+    document.getElementById('heroBig').textContent=fmt(spentTodayAll)+' spent today';
+    document.getElementById('heroMeta').textContent='Log an inflow or expense to get started';
   }
 
   if(state.salary>0 || (state.baseSalary||0)>0){
@@ -1031,9 +1047,15 @@ function render(){
     if (bdHint) {
       const base = state.baseSalary || 0;
       const extra = Math.max(0, state.salary - base);
-      bdHint.innerHTML = extra > 0
-        ? 'Base Job: <b>' + fmt(base) + '</b> · Freelance / Inflows: <b style="color:var(--savings)">+' + fmt(extra) + '</b>'
-        : 'Base Job Take-Home: <b>' + fmt(base) + '</b> · No freelance inflows logged yet this month';
+      if (base > 0) {
+        bdHint.innerHTML = extra > 0
+          ? 'Base Job: <b>' + fmt(base) + '</b> · Freelance / Inflows: <b style="color:var(--savings)">+' + fmt(extra) + '</b>'
+          : 'Base Job Take-Home: <b>' + fmt(base) + '</b> · No extra inflows logged yet this month';
+      } else {
+        bdHint.innerHTML = extra > 0
+          ? 'Split Inflows: <b style="color:var(--savings)">+' + fmt(extra) + '</b> · Zero-base salary'
+          : 'No inflows logged yet this month · Auto-expanding budget';
+      }
     }
   }else{document.getElementById('salarySet').style.display='none';document.getElementById('salaryEmpty').style.display='block';}
 
@@ -1059,10 +1081,14 @@ function render(){
 }
 function renderCatBudgets(){
   const cb=document.getElementById('catBudgets');const budgetCard=document.getElementById('budgetCard');
-  if(state.salary<=0){budgetCard.style.display='none';cb.innerHTML='';return;}
+  if(!cb || !budgetCard) return;
   budgetCard.style.display='block';
   const spentM=spentByCat(startOfMonth(new Date()));
-  cb.innerHTML=CATS.map(c=>{
+  const r=state.ratios||DEFAULT_RATIO;
+  const zeroHint = state.salary <= 0
+    ? '<div class="hint" style="margin:0 0 12px;font-size:13px;color:var(--text-muted)">Budgets auto-expand as inflows arrive · ' + r.needs + '% Needs, ' + r.wants + '% Wants, ' + r.savings + '% Savings</div>'
+    : '';
+  cb.innerHTML=zeroHint + CATS.map(c=>{
     const alloc=state.budgets[c.id]||0,spent=spentM[c.id],left=alloc-spent;
     const pct=alloc>0?Math.min(100,(spent/alloc)*100):0,over=left<0;
     const budgetedSubs=state.subs[c.id].filter(s=>subBudget(c.id,s)>0);
@@ -1230,16 +1256,40 @@ function addSub(cat){const inp=document.getElementById('newsub_'+cat),v=inp.valu
 function removeSub(cat,name){state.subs[cat]=state.subs[cat].filter(s=>s!==name);delete state.subBudgets[subKey(cat,name)];state.settingsUpdatedAt=Date.now();save();renderSubManager();renderCatBudgets();broadcastSync();}
 
 /* ---------------- Salary ---------------- */
-function saveSalary(){const v=Number(document.getElementById('salaryInput').value);if(!v||v<=0){toast('Enter a valid amount');return;}
-  state.baseSalary=v;state.salary=v;state.settingsUpdatedAt=Date.now();applyRatioToBudgets();save();render();toast('Job salary set to '+fmt(v));broadcastSync();}
-function openSalary(){document.getElementById('salaryEdit').value=state.baseSalary||state.salary;openModal('salaryModal');}
-function applySalaryEdit(){const v=Number(document.getElementById('salaryEdit').value);if(!v||v<=0){toast('Enter a valid amount');return;}
-  state.baseSalary=v;state.salary=v;state.settingsUpdatedAt=Date.now();applyRatioToBudgets();save();closeModal('salaryModal');render();toast('Job base salary updated to '+fmt(v));broadcastSync();}
+function saveSalary(){
+  const v=Number(document.getElementById('salaryInput').value);
+  if(isNaN(v)||v<0){toast('Enter a valid amount');return;}
+  state.baseSalary=v;
+  const now=new Date();
+  const mIncome=getMonthlyIncome(startOfMonth(now),endOfMonth(now));
+  state.salary=mIncome.total;
+  state.settingsUpdatedAt=Date.now();
+  applyRatioToBudgets();
+  save();
+  render();
+  toast(v>0 ? 'Job base salary set to '+fmt(v) : 'Base salary cleared');
+  broadcastSync();
+}
+function openSalary(){document.getElementById('salaryEdit').value=state.baseSalary||0;openModal('salaryModal');}
+function applySalaryEdit(){
+  const v=Number(document.getElementById('salaryEdit').value);
+  if(isNaN(v)||v<0){toast('Enter a valid amount');return;}
+  state.baseSalary=v;
+  const now=new Date();
+  const mIncome=getMonthlyIncome(startOfMonth(now),endOfMonth(now));
+  state.salary=mIncome.total;
+  state.settingsUpdatedAt=Date.now();
+  applyRatioToBudgets();
+  save();
+  closeModal('salaryModal');
+  render();
+  toast(v>0 ? 'Job base salary updated to '+fmt(v) : 'Base salary cleared');
+  broadcastSync();
+}
 
 /* ---------------- Expense modal ---------------- */
 let curCat='needs';
 function openExpense(){
-  if(state.salary<=0){go(document.querySelector('[data-p=home]'));toast('Set your salary first');return;}
   document.getElementById('expAmount').value='';document.getElementById('expNote').value='';
   document.getElementById('amtDisplay').innerHTML='<span class="cur">₹</span>0';
   document.getElementById('catPicker').innerHTML=CATS.map(c=>
